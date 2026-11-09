@@ -1,14 +1,18 @@
-# [Project name]
+# EDGE — Trading Intelligence
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A personal swing-trading journal and confluence research platform.
 
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- Use managed workflow `artifacts/edge: web` for the React frontend and `artifacts/api-server: API Server` for the backend.
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/db run generate` — generate development migration SQL
+- `pnpm --filter @workspace/api-server run test` — financial unit and database-backed service tests
+- `pnpm --filter @workspace/api-server run seed:demo` — optional isolated read-only sample dataset
 - Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
@@ -22,23 +26,37 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- Frontend: `artifacts/edge/src`, shared filters/mode/time formatting under `src/lib`
+- API: `artifacts/api-server/src/routes/edge*`; calculations and trade service under `src/lib`
+- Database: `lib/db/src/schema`; generated migrations: `lib/db/drizzle`
+- API contract: `lib/api-spec/openapi.yaml`; run codegen after each contract change
+- Full methodology, run instructions and scope: `README.md`
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Preserve the starter React/Express/Drizzle architecture rather than replacing it with Next.js/Prisma.
+- Clerk manages email/password authentication; browser requests use session cookies, not custom bearer tokens.
+- Treat confluence definitions as research variables: archive/create a new record for a changed trading definition, rather than reinterpreting historical results under the same identifier.
+- Retain financial amounts as decimal strings; number conversion is for plotting/display only.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Accounts and cash flows, draft/open/closed trade journaling and reviews, custom confluences, strategies, observed performance/confluence/risk/psychology analytics and calendar. See README for deliberately deferred roadmap work.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- This product is a personal trading performance laboratory, not a signal service or simple tracker. Confluence analytics are the central differentiator.
+- Target discretionary swing traders taking approximately 2–3 trades weekly, primarily gold, forex and indices, with potential crypto perpetuals.
+- Never present sample performance as actual results. Keep demo and private data separate.
+- Build stable end-to-end milestones; do not attempt every advanced feature in one untested change.
+- Do not deploy or perform destructive operations without permission.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The isolated demo dataset is read-only. Signed-in private workspaces start without sample trades.
+- Different-currency accounts must never be silently aggregated.
+- Initial monetary risk locks at entry; changing stops never redefines historical R.
+- Generated schemas and hooks are regenerated, never hand-edited. Server schema barrel intentionally exports only validation schemas to avoid Orval path/query naming collisions.
 
 ## Pointers
 

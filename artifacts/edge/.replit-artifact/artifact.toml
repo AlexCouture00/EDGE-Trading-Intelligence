@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "EDGE — Trading Intelligence"
+description = "Personal trading journal and confluence research platform for discretionary swing traders, with accurate account-scoped performance analytics."
+version = "1.0.0"
+id = "artifacts/edge"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19059
+
+[services.development]
+run = "pnpm --filter @workspace/edge run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/edge", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/edge/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19059"
+BASE_PATH = "/"

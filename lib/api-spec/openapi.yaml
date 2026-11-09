@@ -1,36 +1,495 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: EDGE Trading Intelligence
 servers:
   - url: /api
-    description: Base API path
-tags:
-  - name: health
-    description: Health operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
-      tags: [health]
-      summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+  /edge/accounts:
+    get:
+      operationId: listAccounts
+      parameters:
+        - $ref: "#/components/parameters/Demo"
+      responses:
+        "200":
+          description: Accounts
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Account" } }
+    post:
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+  /edge/accounts/{id}:
+    patch:
+      operationId: updateAccount
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+  /edge/accounts/{id}/cash-flows:
+    get:
+      operationId: listCashFlows
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/Demo"
+      responses:
+        "200":
+          description: Flows
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CashFlow" } }
+    post:
+      operationId: createCashFlow
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CashFlowInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CashFlow" }
+  /edge/confluences:
+    get:
+      operationId: listConfluences
+      parameters:
+        - $ref: "#/components/parameters/Demo"
+      responses:
+        "200":
+          description: Confluences
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Confluence" } }
+    post:
+      operationId: createConfluence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConfluenceInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Confluence" }
+  /edge/confluences/{id}:
+    patch:
+      operationId: updateConfluence
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConfluenceInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Confluence" }
+  /edge/strategies:
+    get:
+      operationId: listStrategies
+      parameters:
+        - $ref: "#/components/parameters/Demo"
+      responses:
+        "200":
+          description: Strategies
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Strategy" } }
+    post:
+      operationId: createStrategy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StrategyInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Strategy" }
+  /edge/strategies/{id}:
+    patch:
+      operationId: updateStrategy
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StrategyInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Strategy" }
+  /edge/trades:
+    get:
+      operationId: listTrades
+      parameters:
+        - $ref: "#/components/parameters/Demo"
+        - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Symbol"
+        - $ref: "#/components/parameters/StrategyId"
+        - $ref: "#/components/parameters/Direction"
+        - { name: status, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Trades
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Trade" } }
+    post:
+      operationId: createTrade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TradeInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Trade" }
+  /edge/trades/{id}:
+    get:
+      operationId: getTrade
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/Demo"
+      responses:
+        "200":
+          description: Trade
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Trade" }
+    put:
+      operationId: updateTrade
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TradeInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Trade" }
+    delete:
+      operationId: deleteTrade
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204": { description: Deleted }
+  /edge/analytics:
+    get:
+      operationId: getAnalytics
+      parameters:
+        - $ref: "#/components/parameters/Demo"
+        - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - $ref: "#/components/parameters/Symbol"
+        - $ref: "#/components/parameters/StrategyId"
+        - $ref: "#/components/parameters/Direction"
+        - { name: confluenceIds, in: query, description: Comma-separated UUIDs, schema: { type: string } }
+        - { name: matchMode, in: query, schema: { type: string, enum: [exact, containsAll] } }
+        - { name: minSample, in: query, schema: { type: integer, minimum: 1, maximum: 1000 } }
+      responses:
+        "200":
+          description: Analytics computed only from persisted closed trades
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Analytics" }
+  /edge/settings:
+    get:
+      operationId: getSettings
+      parameters:
+        - $ref: "#/components/parameters/Demo"
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+    put:
+      operationId: updateSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Settings" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
 components:
+  parameters:
+    Demo: { name: demo, in: query, schema: { type: boolean }, description: Read-only isolated example dataset }
+    Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    AccountId: { name: accountId, in: query, schema: { type: string } }
+    From: { name: from, in: query, schema: { type: string, format: date-time } }
+    To: { name: to, in: query, schema: { type: string, format: date-time } }
+    Symbol: { name: symbol, in: query, schema: { type: string } }
+    StrategyId: { name: strategyId, in: query, schema: { type: string } }
+    Direction: { name: direction, in: query, schema: { type: string, enum: [long, short] } }
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
-
+        status: { type: string }
+    AccountInput:
+      type: object
+      required: [name, currency, initialBalance, type]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        broker: { type: string, maxLength: 100 }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+        initialBalance: { type: string, pattern: "^\\d+(\\.\\d{1,8})?$" }
+        type: { type: string, enum: [personal_live, demo, prop_evaluation, prop_funded, backtesting] }
+        archived: { type: boolean }
+    Account:
+      allOf:
+        - $ref: "#/components/schemas/AccountInput"
+        - type: object
+          required: [id, balance, tradingPnl, createdAt]
+          properties:
+            id: { type: string }
+            balance: { type: string }
+            tradingPnl: { type: string }
+            createdAt: { type: string }
+    CashFlowInput:
+      type: object
+      required: [type, amount, date]
+      properties:
+        type: { type: string, enum: [deposit, withdrawal, adjustment] }
+        amount: { type: string, pattern: "^\\d+(\\.\\d{1,8})?$" }
+        date: { type: string, format: date-time }
+        note: { type: string, maxLength: 2000 }
+    CashFlow:
+      allOf:
+        - $ref: "#/components/schemas/CashFlowInput"
+        - type: object
+          required: [id, accountId]
+          properties:
+            id: { type: string }
+            accountId: { type: string }
+    ConfluenceInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        category: { type: string, maxLength: 100 }
+        color: { type: string, pattern: "^#[0-9a-fA-F]{6}$" }
+        enabled: { type: boolean }
+        archived: { type: boolean }
+        sortOrder: { type: integer, minimum: 0 }
+    Confluence:
+      allOf:
+        - $ref: "#/components/schemas/ConfluenceInput"
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string }
+    StrategyInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 4000 }
+        entryRules: { type: string, maxLength: 4000 }
+        exitRules: { type: string, maxLength: 4000 }
+        riskRules: { type: string, maxLength: 4000 }
+        timeframe: { type: string, maxLength: 50 }
+        archived: { type: boolean }
+    Strategy:
+      allOf:
+        - $ref: "#/components/schemas/StrategyInput"
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string }
+    ExecutionInput:
+      type: object
+      required: [kind, price, quantity, timestamp]
+      properties:
+        kind: { type: string, enum: [entry, exit] }
+        price: { type: string }
+        quantity: { type: string }
+        timestamp: { type: string, format: date-time }
+        fee: { type: string }
+    TradeInput:
+      type: object
+      required: [accountId, status]
+      properties:
+        accountId: { type: string, format: uuid }
+        status: { type: string, enum: [draft, open, closed] }
+        symbol: { type: string, maxLength: 30 }
+        assetClass: { type: string, enum: [forex, metals, indices, crypto, futures, stocks] }
+        direction: { type: string, enum: [long, short] }
+        entryAt: { type: ["string", "null"], format: date-time }
+        exitAt: { type: ["string", "null"], format: date-time }
+        entryPrice: { type: ["string", "null"] }
+        exitPrice: { type: ["string", "null"] }
+        stopLoss: { type: ["string", "null"] }
+        takeProfit: { type: ["string", "null"] }
+        quantity: { type: ["string", "null"] }
+        multiplier: { type: ["string", "null"] }
+        initialRisk: { type: ["string", "null"] }
+        grossPnl: { type: ["string", "null"] }
+        commission: { type: string }
+        funding: { type: string }
+        slippage: { type: string }
+        pnlSource: { type: string, enum: [broker, calculated] }
+        strategyId: { type: ["string", "null"] }
+        timeframe: { type: string, maxLength: 50 }
+        higherTimeframe: { type: string, maxLength: 50 }
+        session: { type: string, maxLength: 50 }
+        regime: { type: string, maxLength: 100 }
+        emotion: { type: string, maxLength: 100 }
+        confidence: { type: integer, minimum: 1, maximum: 5 }
+        grade: { type: string, enum: [A, B, C, D, F] }
+        followedPlan: { type: boolean }
+        behavioralTags: { type: array, items: { type: string }, maxItems: 20 }
+        thesis: { type: string, maxLength: 20000 }
+        entryReason: { type: string, maxLength: 20000 }
+        management: { type: string, maxLength: 20000 }
+        exitReason: { type: string, maxLength: 20000 }
+        wentWell: { type: string, maxLength: 20000 }
+        wentWrong: { type: string, maxLength: 20000 }
+        lesson: { type: string, maxLength: 20000 }
+        chartUrl: { type: string, maxLength: 2000 }
+        confluenceIds: { type: array, items: { type: string, format: uuid }, maxItems: 30 }
+        executions: { type: array, items: { $ref: "#/components/schemas/ExecutionInput" }, maxItems: 100 }
+    Trade:
+      allOf:
+        - $ref: "#/components/schemas/TradeInput"
+        - type: object
+          required: [id, accountName, currency, netPnl, realizedR, confluences, createdAt, updatedAt]
+          properties:
+            id: { type: string }
+            accountName: { type: string }
+            currency: { type: string }
+            strategyName: { type: ["string", "null"] }
+            netPnl: { type: ["string", "null"] }
+            realizedR: { type: ["string", "null"] }
+            confluences: { type: array, items: { $ref: "#/components/schemas/Confluence" } }
+            createdAt: { type: string }
+            updatedAt: { type: string }
+    Metrics:
+      type: object
+      required: [totalTrades, wins, losses, breakeven, winRate, netPnl, averageR, medianR, totalR, profitFactor, maxDrawdown, ruleAdherence, rSample, averageHoldHours, streak]
+      properties:
+        totalTrades: { type: integer }
+        wins: { type: integer }
+        losses: { type: integer }
+        breakeven: { type: integer }
+        winRate: { type: ["number", "null"] }
+        netPnl: { type: string }
+        averageR: { type: ["number", "null"] }
+        medianR: { type: ["number", "null"] }
+        totalR: { type: number }
+        profitFactor: { type: ["number", "null"], description: Null when no losses; see profitFactorInfinite }
+        profitFactorInfinite: { type: boolean }
+        maxDrawdown: { type: string }
+        maxDrawdownPercent: { type: ["number", "null"] }
+        ruleAdherence: { type: ["number", "null"] }
+        rSample: { type: integer }
+        averageHoldHours: { type: ["number", "null"] }
+        streak: { type: integer }
+    GroupMetrics:
+      allOf:
+        - $ref: "#/components/schemas/Metrics"
+        - type: object
+          required: [id, name]
+          properties:
+            id: { type: string }
+            name: { type: string }
+            color: { type: string }
+            confluenceIds: { type: array, items: { type: string } }
+            sampleWarning: { type: boolean }
+    EquityPoint:
+      type: object
+      required: [date, balance, pnl, cumulativeR, drawdown]
+      properties:
+        date: { type: string }
+        balance: { type: number }
+        pnl: { type: number }
+        cumulativeR: { type: number }
+        drawdown: { type: number }
+    Analytics:
+      type: object
+      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
+      properties:
+        isDemo: { type: boolean }
+        currency: { type: string }
+        metrics: { $ref: "#/components/schemas/Metrics" }
+        equity: { type: array, items: { $ref: "#/components/schemas/EquityPoint" } }
+        monthly: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byInstrument: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byStrategy: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byDirection: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byEmotion: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byGrade: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        confluences: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        combinations: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byConfluenceCount: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        recentTrades: { type: array, items: { $ref: "#/components/schemas/Trade" } }
+        openTrades: { type: integer }
+        warnings: { type: array, items: { type: string } }
+    Settings:
+      type: object
+      required: [timezone, riskLimitPercent]
+      properties:
+        timezone: { type: string, maxLength: 100 }
+        riskLimitPercent: { type: string, pattern: "^\\d+(\\.\\d{1,4})?$" }

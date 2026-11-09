@@ -1,0 +1,1 @@
+- [Contract generation](contract-generation.md) — Orval path/query names can collide in mixed validation/type barrels; preserve the separated exports.
