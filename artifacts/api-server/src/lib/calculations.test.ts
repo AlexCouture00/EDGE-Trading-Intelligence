@@ -60,3 +60,32 @@ test("drawdown follows chronological exits, independent of insertion order", () 
   const rows = [trade("-200", "-2", "closed", 3), trade("100", "1", "closed", 1), trade("-50", "-0.5", "closed", 2)];
   assert.equal(summarize(rows, "1000").maxDrawdown, "250.00000000");
 });
+test("cash flows neither create nor conceal realized drawdown", () => {
+  const rows = [trade("100", "1", "closed", 1), trade("-200", "-2", "closed", 3)];
+  const curve = equitySeries(rows, "1000", [
+    { date: "2026-01-02T00:00:00Z", type: "deposit", amount: "5000" },
+    { date: "2026-01-04T00:00:00Z", type: "withdrawal", amount: "4000" },
+  ]);
+  assert.equal(curve.at(-1)!.balance, 1900);
+  assert.equal(curve.at(-1)!.pnl, -100);
+  assert.equal(curve.at(-1)!.drawdown, 200);
+  assert.equal(summarize(rows, "1000").maxDrawdown, "200.00000000");
+});
+test("date boundaries carry prior balances, exclude future events, reset period P&L/R", () => {
+  const curve = equitySeries([
+    trade("100", "1", "closed", 1), trade("-50", "-0.5", "closed", 3), trade("999", "9", "closed", 5),
+  ], "1000", [
+    { date: "2026-01-02T00:00:00Z", type: "deposit", amount: "500" },
+    { date: "2026-01-06T00:00:00Z", type: "deposit", amount: "9999" },
+  ], new Date("2026-01-03T00:00:00Z"), new Date("2026-01-04T23:59:59Z"));
+  assert.equal(curve.length, 1);
+  assert.deepEqual({ ...curve[0], date: "" }, { date: "", balance: 1550, pnl: -50, cumulativeR: -0.5, drawdown: 50 });
+});
+test("mixed known and unknown risk uses only known risk for expectancy, including zero R", () => {
+  const m = summarize([trade("100", "1"), trade("-100", "-2"), trade("0", "0"), trade("999", null)], "1000");
+  assert.equal(m.averageR, -1 / 3);
+  assert.equal(m.medianR, 0);
+  assert.equal(m.rSample, 3);
+  assert.equal(m.totalR, -1);
+  assert.equal(m.winRate, 200 / 3);
+});

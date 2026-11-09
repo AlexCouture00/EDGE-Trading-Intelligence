@@ -33,7 +33,8 @@ router.get("/analytics", async (req, res): Promise<void> => {
   const opening = starting.plus(prior).plus(priorFlows);
   const metrics = summarize(closed, opening.toString());
   // Subgroup balance series are attribution: only the filtered trade outcomes, with external flows shown separately.
-  const filteredFlows = query.symbol || query.strategyId || query.direction || selectedIds.length ? [] : flows;
+  const isAttribution = Boolean(query.symbol || query.strategyId || query.direction || query.confluenceIds !== undefined);
+  const filteredFlows = isAttribution ? [] : flows;
   const equity = equitySeries(closed, opening.toString(),
     filteredFlows.filter((f) => !query.from || f.date >= new Date(query.from)), undefined, query.to ? new Date(query.to) : undefined);
   if (closed.length || equity.length) {
@@ -71,7 +72,7 @@ router.get("/analytics", async (req, res): Promise<void> => {
     "Win rate excludes breakeven outcomes; expectancy is mean realized R including breakeven outcomes with known risk.",
     "Balance is realized only, not mark-to-market equity. External cash flows are not trading profit. Drawdown uses a cash-flow-neutral realized trading series.",
     "Confluence association does not prove causation. Combination rankings prioritize sample size; no statistical superiority is implied.",
-    ...(query.symbol || query.strategyId || query.direction || selectedIds.length ? ["Filtered balance is performance attribution, not an account balance; cash flows are excluded."] : []),
+    ...(isAttribution ? ["Filtered balance is performance attribution, not an account balance; cash flows are excluded."] : []),
   ];
   res.json(GetAnalyticsResponse.parse({
     isDemo: res.locals.isDemo, currency, metrics, equity,

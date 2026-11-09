@@ -83,6 +83,21 @@ test("persisted trade service: drafts, ownership, original risk, historical conf
         ],
       })), /exceed/);
     });
+    await t.test("fractional weighted prices never introduce rounding P&L; short fills use signed notionals", async () => {
+      for (const direction of ["long", "short"]) {
+        const id = await saveTrade(owner, CreateTradeBody.parse({
+          ...base, direction, confluenceIds: [], pnlSource: "calculated", multiplier: "100000000",
+          commission: "0", executions: [
+            { kind: "entry", price: "100", quantity: "1", timestamp: "2026-01-01T10:00:00Z" },
+            { kind: "entry", price: "101", quantity: "2", timestamp: "2026-01-01T11:00:00Z" },
+            { kind: "exit", price: "102", quantity: "3", timestamp: "2026-01-02T10:00:00Z" },
+          ],
+        }));
+        const row = (await loadTrades(owner)).find((r) => r.id === id)!;
+        assert.equal(row.grossPnl, direction === "long" ? "400000000.00000000" : "-400000000.00000000");
+        await db.delete(trades).where(eq(trades.id, id));
+      }
+    });
     await t.test("zero risk remains unavailable and fees can change a gross winner into a loss", async () => {
       const id = await saveTrade(owner, CreateTradeBody.parse({ ...base, confluenceIds: [], initialRisk: "0", grossPnl: "1", commission: "2" }));
       const row = (await loadTrades(owner)).find((r) => r.id === id)!;

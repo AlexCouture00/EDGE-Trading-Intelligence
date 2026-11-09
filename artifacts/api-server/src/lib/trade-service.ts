@@ -94,7 +94,13 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
     if (data.pnlSource === "calculated" && data.status === "closed") {
       // This explicitly models a linear, account-currency-settled contract, never an inverse contract.
       if (!data.entryPrice || !data.exitPrice || !data.quantity || !data.multiplier) throw new HttpError(400, "Linear calculation requires entry/exit prices, quantity and an explicit contract multiplier. For other contracts use broker-reported P&L.");
-      data.grossPnl = linearPnl(data.entryPrice, data.exitPrice, data.quantity, data.multiplier, data.direction ?? "long");
+      // Use unrounded execution notionals, not rounded weighted summary prices.
+      // Otherwise fractional weighted prices can introduce phantom profit/loss.
+      data.grossPnl = fills.length
+        ? money(exits.reduce((s, f) => s.plus(D(f.price).mul(f.quantity)), D())
+          .minus(entries.reduce((s, f) => s.plus(D(f.price).mul(f.quantity)), D()))
+          .mul(data.multiplier).mul(data.direction === "short" ? -1 : 1))
+        : linearPnl(data.entryPrice, data.exitPrice, data.quantity, data.multiplier, data.direction ?? "long");
     }
     if (data.status === "closed" && data.grossPnl == null) throw new HttpError(400, "Enter verified broker-reported gross P&L, or configure a supported linear calculation.");
     const fillFees = fills.reduce((s, f) => s.plus(f.fee ?? "0"), D());

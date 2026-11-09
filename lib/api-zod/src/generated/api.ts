@@ -446,8 +446,8 @@ export const UpdateStrategyResponse = zod.object({
 export const ListTradesQueryParams = zod.object({
   "demo": zod.coerce.boolean().optional().describe('Read-only isolated example dataset'),
   "accountId": zod.coerce.string().optional(),
-  "from": zod.date().optional(),
-  "to": zod.date().optional(),
+  "from": zod.coerce.date().optional(),
+  "to": zod.coerce.date().optional(),
   "symbol": zod.coerce.string().optional(),
   "strategyId": zod.coerce.string().optional(),
   "direction": zod.enum(['long', 'short']).optional(),
@@ -1118,8 +1118,8 @@ export const getAnalyticsQueryMinSampleMax = 1000;
 export const GetAnalyticsQueryParams = zod.object({
   "demo": zod.coerce.boolean().optional().describe('Read-only isolated example dataset'),
   "accountId": zod.coerce.string().optional(),
-  "from": zod.date().optional(),
-  "to": zod.date().optional(),
+  "from": zod.coerce.date().optional(),
+  "to": zod.coerce.date().optional(),
   "symbol": zod.coerce.string().optional(),
   "strategyId": zod.coerce.string().optional(),
   "direction": zod.enum(['long', 'short']).optional(),

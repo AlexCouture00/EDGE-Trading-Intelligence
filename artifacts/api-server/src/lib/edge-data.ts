@@ -84,8 +84,11 @@ export async function loadTrades(ownerId: string) {
 export type LoadedTrade = Awaited<ReturnType<typeof loadTrades>>[number];
 
 export function filterTrades<T extends LoadedTrade>(rows: T[], query: Record<string, unknown>) {
-  const from = query.from ? new Date(String(query.from)).getTime() : null;
-  const to = query.to ? new Date(String(query.to)).getTime() : null;
+  const timestamp = (v: unknown) => v instanceof Date ? v.getTime() : new Date(String(v)).getTime();
+  const from = query.from ? timestamp(query.from) : null;
+  const to = query.to ? timestamp(query.to) : null;
+  if ((from !== null && !Number.isFinite(from)) || (to !== null && !Number.isFinite(to))) throw new HttpError(400, "Invalid date range.");
+  if (from !== null && to !== null && from > to) throw new HttpError(400, "Start date must be on or before end date.");
   const search = String(query.search ?? "").toLowerCase();
   return rows.filter((t) => {
     const date = new Date(t.status === "closed" ? t.exitAt! : t.entryAt ?? t.createdAt).getTime();

@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { Check, Lock } from "lucide-react";
 import {
-  useCreateTrade, useUpdateTrade, useListConfluences, useListStrategies, useListAccounts,
+  useCreateTrade, useUpdateTrade, useListConfluences, useListStrategies, useListAccounts, getGetTradeQueryKey,
   type Trade, type TradeInput, type TradeInputStatus, type TradeInputAssetClass, type TradeInputDirection, type TradeInputGrade, type TradeInputPnlSource,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -203,7 +203,15 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
       return;
     }
     const data = build(status);
-    const done = (t: Trade) => { void qc.invalidateQueries(); toast({ title: initial ? "Trade updated" : status === "draft" ? "Draft saved" : "Trade logged" }); nav(`/trades/${t.id}`); };
+    const done = async (t: Trade) => {
+      const detailKey = getGetTradeQueryKey(t.id);
+      // An older detail fetch must not overwrite the authoritative mutation result.
+      await qc.cancelQueries({ queryKey: detailKey });
+      qc.setQueryData(detailKey, t);
+      void qc.invalidateQueries();
+      toast({ title: initial ? "Trade updated" : status === "draft" ? "Draft saved" : "Trade logged" });
+      nav(`/trades/${t.id}`);
+    };
     const fail = (err: unknown) => toast({ title: "Save failed", description: errMsg(err), variant: "destructive" });
     if (initial) update.mutate({ id: initial.id, data }, { onSuccess: done, onError: fail });
     else create.mutate({ data }, { onSuccess: done, onError: fail });

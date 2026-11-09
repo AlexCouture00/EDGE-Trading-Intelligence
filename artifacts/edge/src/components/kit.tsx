@@ -44,25 +44,26 @@ export function Panel({ title, meta, children, className, bodyClass, actions }: 
 export function Stat({ label, value, sub, valueClass, testId, hint }: { label: string; value: ReactNode; sub?: ReactNode; valueClass?: string; testId?: string; hint?: string }) {
   const body = (
     <div className="px-4 py-3.5 min-w-0">
-      <div className="eyebrow truncate">{label}</div>
-      <div className={cn("num text-[22px] mt-1.5 leading-none tracking-tight truncate", valueClass)} data-testid={testId}>{value}</div>
-      {sub && <div className="text-[11px] text-muted-foreground mt-2 truncate">{sub}</div>}
+      <div className="eyebrow break-words">{label}</div>
+      <div className={cn("num text-[22px] mt-1.5 leading-tight tracking-tight [overflow-wrap:anywhere]", valueClass)} data-testid={testId}>{value}</div>
+      {sub && <div className="text-[11px] text-muted-foreground mt-2 break-words">{sub}</div>}
     </div>
   );
   if (!hint) return body;
   return (
     <Tooltip>
-      <TooltipTrigger asChild><div className="cursor-help">{body}</div></TooltipTrigger>
+      <TooltipTrigger asChild><div className="cursor-help min-w-0">{body}</div></TooltipTrigger>
       <TooltipContent className="max-w-xs text-xs">{hint}</TooltipContent>
     </Tooltip>
   );
 }
 
 export function StatStrip({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("panel rise grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 divide-x divide-y xl:divide-y-0 divide-card-border overflow-hidden", className)}>{children}</div>;
+  return <div className={cn("panel rise grid grid-cols-[repeat(auto-fit,minmax(min(100%,190px),1fr))] divide-x divide-y divide-card-border", className)}>{children}</div>;
 }
 
 export function SampleBadge({ n, min = MIN_SAMPLE }: { n: number; min?: number }) {
+  min = Math.max(MIN_SAMPLE, min);
   if (n >= min) return null;
   return (
     <Tooltip>
@@ -170,7 +171,7 @@ export function GroupTable({ rows, currency, label = "Group", empty, onRowClick,
         </thead>
         <tbody>
           {rows.map((g) => {
-            const low = g.sampleWarning ?? g.totalTrades < minSample;
+            const low = g.sampleWarning || g.totalTrades < Math.max(MIN_SAMPLE, minSample);
             return (
               <tr key={g.id} onClick={onRowClick ? () => onRowClick(g) : undefined} className={cn("border-b border-card-border/60 last:border-0 row-hover", onRowClick && "cursor-pointer")} data-testid={`row-group-${g.id}`}>
                 <td className="px-4 py-2.5">

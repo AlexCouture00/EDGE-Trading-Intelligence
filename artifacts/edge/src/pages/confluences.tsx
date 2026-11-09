@@ -66,7 +66,7 @@ export default function Confluences() {
             <div className="mt-4">
               {combo.isLoading ? <LoadingBlock rows={2} /> : combo.error ? <ErrorBlock error={combo.error} retry={() => combo.refetch()} /> : cm && (
                 <>
-                  <div className="panel grid grid-cols-2 md:grid-cols-6 divide-x divide-card-border bg-background/40">
+                  <div className="panel grid grid-cols-[repeat(auto-fit,minmax(min(100%,190px),1fr))] divide-x divide-y divide-card-border bg-background/40">
                     <Stat label="Matching trades" value={<span className="flex items-center gap-2">{cm.totalTrades}<SampleBadge n={cm.totalTrades} min={minSample} /></span>} />
                     <Stat label="Win rate" value={ratio(cm.winRate)} />
                     <Stat label="Avg R" value={rFmt(cm.averageR)} valueClass={tone(cm.averageR)} sub={`n=${cm.rSample}`} />
@@ -75,7 +75,7 @@ export default function Confluences() {
                     <Stat label="Profit factor" value={pf(cm)} />
                   </div>
                   {a && <p className="text-[12px] text-muted-foreground mt-3">Baseline for comparison: all {a.metrics.totalTrades} closed trades in scope averaged <span className={tone(a.metrics.averageR)}>{rFmt(a.metrics.averageR)}</span> at {ratio(a.metrics.winRate)} win rate.</p>}
-                  {cm.totalTrades < minSample && <div className="mt-3"><Caution>{cm.totalTrades === 0 ? "No closed trades match this selection." : `Only ${cm.totalTrades} matching trades. A difference from baseline this small could easily be noise.`}</Caution></div>}
+                  {cm.totalTrades < Math.max(20, minSample) && <div className="mt-3"><Caution>{cm.totalTrades === 0 ? "No closed trades match this selection." : `Only ${cm.totalTrades} matching trades. This observed difference from baseline could easily be noise; it does not establish an edge.`}</Caution></div>}
                 </>
               )}
             </div>
