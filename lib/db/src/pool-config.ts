@@ -1,4 +1,5 @@
 import type { PoolConfig } from "pg";
+import { normalizeDatabaseCa } from "./certificate";
 
 type Environment = Record<string, string | undefined>;
 
@@ -41,7 +42,7 @@ export function databasePoolConfig(env: Environment, migration = false): PoolCon
     connectionString: secure ? url.toString() : raw,
     ...(secure ? { ssl: {
       rejectUnauthorized: true,
-      ...(env.DATABASE_SSL_CA ? { ca: env.DATABASE_SSL_CA.replace(/\\n/g, "\n") } : {}),
+      ...(env.DATABASE_SSL_CA ? { ca: normalizeDatabaseCa(env.DATABASE_SSL_CA) } : {}),
     } } : {}),
     max: migration ? 1 : integer(env.DATABASE_POOL_MAX, env.VERCEL ? 3 : 10, "DATABASE_POOL_MAX", 20),
     idleTimeoutMillis: 5_000,

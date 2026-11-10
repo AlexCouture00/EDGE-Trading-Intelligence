@@ -61,7 +61,10 @@ no demo data was copied. Do not merge or publish before review and preview tests
 7. Enable SSL enforcement. Runtime and initializer require certificate
    verification. If the server certificate is not trusted by Node's standard
    CA store, download Supabase's root certificate and set `DATABASE_SSL_CA`
-   to its PEM content (literal or escaped newlines). Do not set
+   to its PEM content (literal or escaped newlines). Single-line PEM is also
+   normalized into standard wrapped PEM without changing certificate bytes.
+   The configuration validates base64, X.509 parsing and CA status; malformed
+   input fails with a fixed message that does not expose its contents. Do not set
    `rejectUnauthorized=false` or disable TLS.
 
 ### Pooling

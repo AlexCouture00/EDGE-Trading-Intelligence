@@ -1,3 +1,4 @@
 - [Contract generation](contract-generation.md) — Orval path/query names can collide in mixed validation/type barrels; preserve the separated exports.
 - [Production hosting requirements](production-hosting.md) — User requires GitHub → Vercel, independent PostgreSQL, and approval before deployment or data migration.
 - [External deployment validation](external-deployment-validation.md) — Local socket URLs need actual server-address checks; Vercel's schema can mix JSON Schema drafts.
+- [Certificate diagnostics](certificate-diagnostics.md) — Flattened PEM can contain a valid CA; diagnose formatting and DER separately without exposing input.
