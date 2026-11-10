@@ -9,6 +9,9 @@ export function getClerkProxyHost(req: { headers: IncomingHttpHeaders }): string
   return raw?.split(",")[0]?.trim() || req.headers.host?.trim() || undefined;
 }
 export function clerkProxyMiddleware(): RequestHandler {
+  // Vercel uses an independent Clerk instance with its own Frontend API/DNS.
+  // Do not forward that instance's secret through the managed Replit proxy.
+  if (process.env.VERCEL) return (_req, _res, next) => next();
   if (process.env.NODE_ENV !== "production" || !process.env.CLERK_SECRET_KEY) return (_req, _res, next) => next();
   const secretKey = process.env.CLERK_SECRET_KEY;
   return createProxyMiddleware({

@@ -3,14 +3,28 @@
   "services": {
     "api-server": {
       "root": "artifacts/api-server",
-      "framework": "express"
+      "framework": "express",
+      "entrypoint": "src/app.ts",
+      "installCommand": "pnpm install --frozen-lockfile",
+      "buildCommand": "pnpm --filter @workspace/api-server run build"
     },
     "edge": {
       "root": "artifacts/edge",
-      "framework": "vite"
+      "framework": "vite",
+      "installCommand": "pnpm install --frozen-lockfile",
+      "buildCommand": "pnpm --filter @workspace/edge run build",
+      "outputDirectory": "dist/public",
+      "routes": [
+        { "handle": "filesystem" },
+        { "src": "/(.*)", "dest": "/index.html" }
+      ]
     }
   },
   "rewrites": [
+    {
+      "source": "/api",
+      "destination": { "service": "api-server" }
+    },
     {
       "source": "/api/(.*)",
       "destination": {

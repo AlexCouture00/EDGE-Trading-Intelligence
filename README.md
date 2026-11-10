@@ -16,6 +16,10 @@ All private queries and mutations are scoped to the authenticated Clerk subject.
 
 ## Run
 
+**Production hosting:** GitHub → Vercel Services, with PostgreSQL on Supabase.
+Replit is development only. See [the deployment guide](docs/vercel-supabase.md)
+for the audit, manual setup, environment names, verification and cutover checklist.
+
 Use the configured EDGE and API Server workflows for the browser preview. They supply the assigned `PORT` and `BASE_PATH` automatically; do not create a competing server.
 
 For local maintenance in the Replit shell:
@@ -45,7 +49,7 @@ For a conventional development environment, launch each application with its own
 
 UUID primary keys, foreign keys and owner/date indexes are included. Only deleting a trade cascades to its own execution and confluence-link records. Catalog entities are archived, not deleted.
 
-Drizzle-generated development migration SQL is committed under `lib/db/drizzle/`. Generate a migration after schema edits with `pnpm --filter @workspace/db run generate`. Apply additive development schema updates with `push`. Production schema changes use Replit's Publish flow; there is no startup-time migration script.
+Drizzle-generated migration SQL is committed under `lib/db/drizzle/`. Generate a migration after schema edits with `pnpm --filter @workspace/db run generate`. Apply additive development schema updates with `push` only against the development database. The external Supabase initializer is a separate, explicit command that refuses existing tables and never copies data. Neither Vercel builds nor server startup run migrations. Future production migrations require review and approval; never run `push` or `push-force` against production.
 
 ## Calculation methodology
 

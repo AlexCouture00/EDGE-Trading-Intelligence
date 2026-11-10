@@ -7,6 +7,7 @@ import { HttpError } from "./lib/edge-data";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { externalClerkOptions } from "./lib/auth-options";
 
 const app: Express = express();
 
@@ -38,7 +39,9 @@ app.use((_req, res, next) => {
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(clerkMiddleware((req) => ({
+app.use(process.env.VERCEL
+  ? clerkMiddleware(externalClerkOptions(process.env))
+  : clerkMiddleware((req) => ({
   publishableKey: publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),
 })));
 

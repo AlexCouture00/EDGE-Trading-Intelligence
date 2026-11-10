@@ -10,9 +10,14 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "generate": "drizzle-kit generate --config ./drizzle.config.ts",
+    "initialize:external": "tsx scripts/initialize-external.ts",
+    "validate:migrations": "tsx scripts/validate-migrations.ts",
+    "typecheck:scripts": "tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --esModuleInterop --skipLibCheck --strict --types node scripts/initialize-external.ts scripts/validate-migrations.ts",
+    "test": "tsx --test src/pool-config.test.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
   },
   "dependencies": {
+    "@vercel/functions": "^3.11.0",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
     "pg": "^8.23.1",
@@ -21,6 +26,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
-    "drizzle-kit": "^0.31.11"
+    "drizzle-kit": "^0.31.11",
+    "tsx": "catalog:"
   }
 }
