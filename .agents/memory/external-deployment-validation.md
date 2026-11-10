@@ -2,11 +2,11 @@
 name: External deployment validation
 description: Non-obvious local PostgreSQL and upstream Vercel schema validation constraints.
 ---
-Check the actual PostgreSQL connection address when deciding whether disposable database validation is safe; URL hostname matching alone is insufficient for local development.
+Check the effective driver endpoint, actual client peer and server-side connection when deciding whether disposable database validation is safe. None of those is sufficient alone.
 
-**Why:** This workspace's local PostgreSQL connects through a Unix socket represented in the connection URL in a form that ordinary localhost checks reject. The driver connects successfully and PostgreSQL reports a null server address.
+**Why:** The Replit database proxy connects over private TCP while its upstream PostgreSQL reports a null server address. Conversely, GitHub's loopback Docker port mapping connects to PostgreSQL that reports its container bridge address. A null server address does not prove the client used a Unix socket, and a non-loopback server address does not by itself prove a remote database.
 
-**How to apply:** Permit disposable database creation only after PostgreSQL itself confirms a Unix socket or loopback address. Never relax the check to arbitrary remote hosts, and only drop the uniquely generated test database.
+**How to apply:** Require a genuine socket or loopback client connection for local validation. In GitHub-hosted CI, accept the bridge address only after inspecting the exact job-owned PostgreSQL container and verifying its identity, address, image, running state, mapped port and disposable database identity. Do not allow arbitrary private addresses or trust the CI flag alone. For local tests use a disposable local PostgreSQL instance; keep the proxied development database untouched. Only drop the uniquely generated test database.
 
 Vercel's public configuration schema can declare draft-04 while containing numeric `exclusiveMinimum` keywords from newer drafts.
 

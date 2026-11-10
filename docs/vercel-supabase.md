@@ -216,12 +216,28 @@ pnpm run check:deployment
 ```
 
 `validate:migrations` only accepts a local PostgreSQL development endpoint.
+It checks both node-postgres's effective target and the TCP peer (or a real
+Unix socket), not just the server-reported address. In this repository's
+GitHub-hosted `checks` job only, a PostgreSQL bridge address is accepted when
+Docker inspection verifies the exact running `postgres:16` service ID, server
+IP and published port, with the `edge_ci` test identity. A private IP or `CI`
+flag alone is never sufficient. Vercel/production contexts are always refused.
+Replit's database proxy is not a local TCP or Unix-socket endpoint, even if the
+upstream database reports a Unix socket; use a disposable local PostgreSQL
+instance or the GitHub-hosted checks rather than bypassing the guard.
 It creates a unique temporary database, applies the baseline and hardening,
 verifies all eight tables, six foreign keys, zero initial data, RLS, migration
 journal/idempotency and refusal to overwrite an initialized database. It then
 runs the API financial/ownership suite against that separate database and
 drops **only that generated database**. Existing development rows are untouched.
 Validation can require local database-creation permission.
+
+Connection diagnostics show only transport/address classifications, numeric
+ports, peer/server IPs and allowlisted context booleans. Failures include a
+stage, stable safety reason or SQLSTATE, and a safe hint. Connection URLs,
+usernames, passwords, SQL parameters, raw driver errors/stacks and raw Docker
+inspection output are never logged. Cleanup errors are reported separately
+so they cannot hide the original validation failure.
 
 `check:deployment` checks routing selection, SPA fallback settings and built
 assets; it is not a substitute for Vercel's cloud builder/runtime.

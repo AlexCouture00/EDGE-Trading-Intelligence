@@ -41,4 +41,7 @@ jobs:
       - run: pnpm run build:production
       - run: pnpm --filter @workspace/db run test
       - run: pnpm --filter @workspace/db run validate:migrations
+        env:
+          # Exact ephemeral container created by this job; not a remote-host bypass.
+          EDGE_VALIDATION_SERVICE_CONTAINER_ID: ${{ job.services.postgres.id }}
       - run: pnpm run check:deployment
