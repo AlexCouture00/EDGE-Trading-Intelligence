@@ -7,12 +7,12 @@ A personal trading journal and confluence research platform for discretionary sw
 The existing pnpm monorepo is preserved rather than replaced with Next.js/Prisma:
 
 - `artifacts/edge`: React, Vite, strict TypeScript, Tailwind and accessible UI components.
-- `artifacts/api-server`: Express API, Clerk authentication, request validation, financial calculations and analytics.
+- `artifacts/api-server`: Express API, single-user Supabase authentication, request validation, financial calculations and analytics.
 - `lib/db`: PostgreSQL with Drizzle; numeric `(28,8)` amounts and UTC timestamps.
 - `lib/api-spec/openapi.yaml`: API contract. Orval generates client hooks and server validation schemas.
-- Clerk provides email/password sign-up, verification and sessions. No local password database or bespoke tokens.
+- Supabase Auth provides email/password sessions for one explicitly authorized user. There is no public sign-up.
 
-All private queries and mutations are scoped to the authenticated Clerk subject. Database relation ownership is checked before trade creation/update. The isolated demo owner can be read through `demo=true`, but cannot be authenticated or modified through public routes.
+Every private API verifies the Supabase session and matches one exact configured user UUID. Queries and mutations remain owner-scoped; relation ownership is checked before trade creation/update. Public demo access is disabled. Existing owner IDs are never automatically rewritten; see `docs/vercel-supabase.md` for the approval-required migration process.
 
 ## Run
 

@@ -29,10 +29,10 @@ for (const [name, service] of Object.entries(config.services)) {
 function serviceFor(url) {
   return config.rewrites.find((route) => new RegExp(`^${route.source}$`).test(url))?.destination.service;
 }
-for (const url of ["/api", "/api/healthz", "/api/edge/accounts", "/api/edge/trades/id", "/api/__clerk/x"]) {
+for (const url of ["/api", "/api/healthz", "/api/edge/accounts", "/api/edge/trades/id", "/api/auth/session"]) {
   assert.equal(serviceFor(url), "api-server", url);
 }
-for (const url of ["/", "/performance", "/settings", "/journal", "/trades/id/edit", "/sign-in", "/sign-up/verify-email-address", "/logo.svg", "/assets/example.js"]) {
+for (const url of ["/", "/performance", "/settings", "/journal", "/trades/id/edit", "/sign-in", "/logo.svg", "/assets/example.js"]) {
   assert.equal(serviceFor(url), "edge", url);
 }
 assert.equal(config.services["api-server"].entrypoint, "src/app.ts");
@@ -45,5 +45,5 @@ for (const match of html.matchAll(/(?:src|href)="(\/[^"]+)"/g)) {
   await access(path.join(out, match[1]));
 }
 const app = await readFile(path.join(root, "artifacts/edge/src/App.tsx"), "utf8");
-assert.ok(!app.includes("CLERK_SECRET_KEY"), "Private keys must never enter the frontend");
+assert.ok(!app.includes("@clerk/"), "Legacy authentication must not remain in the frontend");
 process.stdout.write("Deployment checks passed: service selection, API precedence, SPA fallback, entrypoint, output and built assets. This is not a Vercel cloud deployment test.\n");

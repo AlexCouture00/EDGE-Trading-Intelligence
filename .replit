@@ -21,3 +21,10 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.development]
+SUPABASE_URL = "https://nakksfyfbalhmxctkicb.supabase.co"
+VITE_SUPABASE_URL = "https://nakksfyfbalhmxctkicb.supabase.co"
+EDGE_AUTHORIZED_USER_ID = "f0cb0c95-3773-4fa1-97dd-4447695fb2fa"

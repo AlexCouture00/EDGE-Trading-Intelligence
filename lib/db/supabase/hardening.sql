@@ -1,6 +1,6 @@
--- Supabase is PostgreSQL only. The browser must never bypass the Express API.
+-- Supabase Auth supplies identity. Data access must still go through Express.
 -- No policies are added: RLS therefore denies non-owner roles by default.
--- The backend uses the trusted database owner; Express enforces Clerk ownership.
+-- The backend uses the trusted database owner; Express enforces the single authorized Supabase subject.
 DO $$
 DECLARE
   edge_table text;

@@ -8,6 +8,15 @@
 import * as zod from 'zod';
 
 
+/**
+ * Returns the single authorized Supabase user; rejects every other identity.
+ */
+export const GetPrivateSessionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().nullable()
+})
+
+
 export const HealthCheckResponse = zod.object({
   "status": zod.string()
 })

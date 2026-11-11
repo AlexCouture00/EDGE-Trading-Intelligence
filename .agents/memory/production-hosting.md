@@ -2,7 +2,7 @@
 name: Production hosting requirements
 description: User's production hosting choice and data-preservation boundaries for EDGE.
 ---
-EDGE production must deploy to Vercel Services through GitHub, not Replit Cloud. Use Supabase strictly as managed PostgreSQL with the existing Drizzle ORM; keep Clerk, not Supabase Auth. Replit remains development only and its database must remain intact.
+EDGE production must deploy to Vercel Services through GitHub, not Replit Cloud. Use the existing Supabase PostgreSQL project with Drizzle. Follow the current authentication requirements in `replit.md`, not the superseded Clerk setup. Replit remains development only and its database must remain intact.
 
 **Why:** The user explicitly specified these hosting requirements.
 

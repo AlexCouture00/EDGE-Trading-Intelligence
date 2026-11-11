@@ -1,22 +1,24 @@
-type Environment = Record<string, string | undefined>;
+import { decodeJwt } from "jose";
 
-/** Independent Clerk production configuration; managed development is unchanged. */
-export function externalClerkOptions(env: Environment) {
-  if (!env.CLERK_PUBLISHABLE_KEY || !env.CLERK_SECRET_KEY) {
-    throw new Error("Vercel requires CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY.");
+type Environment = Record<string, string | undefined>;
+export type AuthConfig = { url: string; publishableKey: string; allowedUserId: string };
+export function supabaseAuthOptions(env: Environment): AuthConfig {
+  const url = env.SUPABASE_URL ?? "";
+  const key = env.SUPABASE_PUBLISHABLE_KEY ?? "";
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { throw new Error("Configure SUPABASE_URL."); }
+  if (parsed.protocol !== "https:" || parsed.origin !== url || parsed.username || parsed.password
+    || !/^[a-z0-9-]+\.supabase\.co$/.test(parsed.hostname)) {
+    throw new Error("SUPABASE_URL must be the exact HTTPS Supabase project origin.");
   }
-  const origins = (env.CLERK_AUTHORIZED_PARTIES ?? "").split(",").map((v) => v.trim()).filter(Boolean);
-  if (!origins.length) throw new Error("CLERK_AUTHORIZED_PARTIES must list the exact allowed HTTPS origins.");
-  for (const origin of origins) {
-    let url: URL;
-    try { url = new URL(origin); } catch { throw new Error("Invalid CLERK_AUTHORIZED_PARTIES origin."); }
-    if (url.protocol !== "https:" || url.origin !== origin || origin.includes("*") || url.username || url.password) {
-      throw new Error("CLERK_AUTHORIZED_PARTIES requires exact HTTPS origins without paths or wildcards.");
-    }
+  // A public publishable/legacy anon key is sufficient. Never accept a service-role key.
+  if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(key)) {
+    try { if (decodeJwt(key).role !== "anon") throw new Error(); }
+    catch { throw new Error("Configure a Supabase publishable key, not a secret/service-role key."); }
   }
-  return {
-    publishableKey: env.CLERK_PUBLISHABLE_KEY,
-    secretKey: env.CLERK_SECRET_KEY,
-    authorizedParties: origins,
-  };
+  const allowedUserId = env.EDGE_AUTHORIZED_USER_ID ?? "";
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(allowedUserId)) {
+    throw new Error("Configure one exact EDGE_AUTHORIZED_USER_ID UUID.");
+  }
+  return { url, publishableKey: key, allowedUserId: allowedUserId.toLowerCase() };
 }

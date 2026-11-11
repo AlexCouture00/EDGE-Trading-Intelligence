@@ -359,6 +359,12 @@ export const DirectionParameter = {
   short: 'short',
 } as const;
 
+export type GetPrivateSession200 = {
+  id: string;
+  /** @nullable */
+  email: string | null;
+};
+
 export type ListAccountsParams = {
 /**
  * Read-only isolated example dataset

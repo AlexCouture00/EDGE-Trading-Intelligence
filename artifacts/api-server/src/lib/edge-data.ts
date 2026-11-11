@@ -1,4 +1,3 @@
-import { getAuth } from "@clerk/express";
 import { db, settings, confluences, trades, accounts, strategies, executions, tradeConfluences } from "@workspace/db";
 import { and, eq, inArray, asc } from "drizzle-orm";
 import type { RequestHandler } from "express";
@@ -25,22 +24,16 @@ export async function initializeOwner(ownerId: string) {
 export const edgeIdentity: RequestHandler = async (req, res, next) => {
   const demo = req.query.demo === "true" || req.query.demo === "1";
   const write = !["GET", "HEAD", "OPTIONS"].includes(req.method);
-  if (write && demo) throw new HttpError(403, "Demo workspace is read-only. Switch to your private workspace to save changes.");
+  if (demo) throw new HttpError(403, "Demo access is disabled for this private journal.");
   if (write && req.headers.origin) {
     const hostname = new URL(req.headers.origin).host;
     const forwarded = req.headers["x-forwarded-host"];
     const host = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",")[0]?.trim() ?? req.headers.host;
     if (host && hostname !== host) throw new HttpError(403, "Cross-origin writes are not allowed.");
   }
-  if (demo) {
-    res.locals.ownerId = DEMO_OWNER;
-  } else {
-    const auth = getAuth(req);
-    if (!auth.userId) throw new HttpError(401, "Sign in to access your private trading workspace.");
-    res.locals.ownerId = auth.userId;
-    await initializeOwner(auth.userId);
-  }
-  res.locals.isDemo = demo;
+  if (!res.locals.ownerId) throw new HttpError(401, "Sign in to access your private journal.");
+  await initializeOwner(res.locals.ownerId);
+  res.locals.isDemo = false;
   res.setHeader("Cache-Control", "private, no-store");
   next();
 };

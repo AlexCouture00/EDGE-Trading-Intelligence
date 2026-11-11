@@ -1,8 +1,8 @@
 ---
 name: Protected Preview testing
-description: Safe external Vercel browser testing with independent Clerk and isolated test identities.
+description: Safe external Vercel browser testing with exact-origin credentials and actual external auth sessions.
 ---
-Keep Vercel Preview Authentication enabled while testing. Never attach an automation bypass header globally: it could be forwarded to Clerk or other third-party origins.
+Keep Vercel Preview Authentication enabled while testing. Never attach an automation bypass header globally: it could be forwarded to the authentication provider or other third-party origins.
 
 **Why:** The browser runner's header setter was not origin-scoped, and its notebook could not directly access environment secrets. A working alternative was to obtain a host-scoped bypass cookie through a programmatic request to the exact Preview health endpoint.
 
@@ -14,8 +14,8 @@ Native browser WebCrypto requires a secure context; an insecure `about:blank` pa
 
 **How to apply:** Check `isSecureContext` in the actual browser context before concluding crypto is unavailable. Do not add public secret endpoints or load third-party code to bridge credentials.
 
-External independent Clerk must be tested against its own instance, not the local Replit-managed helper. For a development instance with test mode enabled, use unique synthetic `+clerk_test@example.com` identities and the documented verification code; never real-user credentials or fabricated session tokens.
+External authentication must be tested against the configured project, not legacy managed-login helpers. Keep test users separate from real data; never fabricate session tokens for hosted acceptance checks.
 
-**Why:** Local managed auth and the external Preview use different identity stores. Real external registration, sign-in, sign-out and user isolation need the actual external instance.
+**Why:** Local helpers and the external Preview can use different identity stores. Hosted sign-in, sign-out and authorization checks need the actual external instance.
 
 **How to apply:** Honor CAPTCHA/verification requirements and record untested authorization methods explicitly. If resuming a tester fails with a connector-authority mismatch, respect that boundary and establish a new authorized test session rather than assuming previous cookies or credentials transferred.

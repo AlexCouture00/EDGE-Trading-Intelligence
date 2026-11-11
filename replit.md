@@ -35,7 +35,7 @@ A personal swing-trading journal and confluence research platform.
 ## Architecture decisions
 
 - Preserve the starter React/Express/Drizzle architecture rather than replacing it with Next.js/Prisma.
-- Clerk manages email/password authentication; browser requests use session cookies, not custom bearer tokens.
+- EDGE is a PRIVATE, SINGLE-USER personal trading journal, not a SaaS. Supabase Auth manages email/password sessions for one exact `EDGE_AUTHORIZED_USER_ID`. Browser API calls send the access token as a bearer; Express verifies it with Supabase Auth and rejects all other users. No public sign-up or demo access. Never rewrite existing owner IDs without backup and explicit user approval.
 - Treat confluence definitions as research variables: archive/create a new record for a changed trading definition, rather than reinterpreting historical results under the same identifier.
 - Retain financial amounts as decimal strings; number conversion is for plotting/display only.
 
