@@ -19,3 +19,9 @@ GitHub source-control OAuth can permit repository and PR operations while lackin
 **Why:** A push containing a GitHub Actions workflow was rejected as a whole even though remote fetches and PR inspection worked. Repository access alone does not prove workflow-write access.
 
 **How to apply:** Check current permissions before pushing workflow changes. If GitHub rejects the push for missing scope, retain local commits and request reauthorization with workflow access; do not force-push or strip workflow history without user approval. The source-control connector may report that inline reconnection is unavailable, requiring the user to reconnect through Git-provider settings.
+
+For Vercel's deployment REST API, use explicit `target: "staging"` for Preview and verify the returned identity claims say `environment: "preview"`. Do not send `target: "preview"` or rely on omission.
+
+**Why:** The first deployment of a new linked project was unexpectedly classified as Production when the target was omitted, despite using a feature branch. It was immediately canceled before readiness. The API rejects the literal `preview` target; `staging` returned the Preview environment correctly.
+
+**How to apply:** Fail closed and immediately cancel any request whose returned target or environment is Production when only Preview was authorized. Keep `main` as the Production branch, scope all credentials to the feature branch's Preview environment, and use the actual returned branch alias for exact Clerk authorized origins.
