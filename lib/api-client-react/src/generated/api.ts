@@ -33,6 +33,7 @@ import type {
   Confluence,
   ConfluenceInput,
   GetAnalyticsParams,
+  GetPrivateSession200,
   GetSettingsParams,
   GetTradeParams,
   HealthStatus,
@@ -74,6 +75,104 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetPrivateSessionUrl = () => {
+
+
+
+
+  return `/api/auth/session`
+}
+
+/**
+ * Returns the single authorized Supabase user; rejects every other identity.
+ */
+export const getPrivateSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetPrivateSession200> => {
+
+  return customFetch<GetPrivateSession200>(getGetPrivateSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPrivateSessionQueryKey = () => {
+    return [
+    `/api/auth/session`
+    ] as const;
+    }
+
+
+export const getGetPrivateSessionQueryOptions = <TData = Awaited<ReturnType<typeof getPrivateSession>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPrivateSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPrivateSession>>> = ({ signal }) => getPrivateSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPrivateSession>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPrivateSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getPrivateSession>>>
+export type GetPrivateSessionQueryError = ErrorType<void>
+
+
+export function useGetPrivateSession<TData = Awaited<ReturnType<typeof getPrivateSession>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateSession>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPrivateSession>>,
+          TError,
+          Awaited<ReturnType<typeof getPrivateSession>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPrivateSession<TData = Awaited<ReturnType<typeof getPrivateSession>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateSession>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPrivateSession>>,
+          TError,
+          Awaited<ReturnType<typeof getPrivateSession>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPrivateSession<TData = Awaited<ReturnType<typeof getPrivateSession>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPrivateSession<TData = Awaited<ReturnType<typeof getPrivateSession>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateSession>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPrivateSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getHealthCheckUrl = () => {
 

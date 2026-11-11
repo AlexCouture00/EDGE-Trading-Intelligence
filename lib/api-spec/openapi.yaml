@@ -5,10 +5,34 @@ info:
   description: EDGE Trading Intelligence
 servers:
   - url: /api
+security:
+  - PersonalBearer: []
 paths:
+  /auth/session:
+    get:
+      operationId: getPrivateSession
+      description: Returns the single authorized Supabase user; rejects every other identity.
+      responses:
+        "200":
+          description: Authorized journal owner
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, email]
+                properties:
+                  id: { type: string, format: uuid }
+                  email: { type: [string, "null"] }
+        "401":
+          description: Missing, invalid or expired Supabase session
+        "403":
+          description: Authenticated user is not the authorized owner
+        "503":
+          description: Authentication is unconfigured or temporarily unavailable
   /healthz:
     get:
       operationId: healthCheck
+      security: []
       responses:
         "200":
           description: Healthy
@@ -272,6 +296,11 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Settings" }
 components:
+  securitySchemes:
+    PersonalBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: Supabase JWT
   parameters:
     Demo: { name: demo, in: query, schema: { type: boolean }, description: Read-only isolated example dataset }
     Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
