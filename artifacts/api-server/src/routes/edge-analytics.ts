@@ -82,7 +82,7 @@ router.get("/analytics", async (req, res): Promise<void> => {
     byDirection: groups((t) => t.direction),
     byEmotion: groups((t) => t.emotion || "Not recorded"),
     byGrade: groups((t) => t.grade || "Not graded"),
-    confluences: allConfluences.map((c) => ({
+    confluences: allConfluences.filter((c) => !c.archived).map((c) => ({
       ...group(c.id, c.name, closed.filter((t) => t.confluenceIds.includes(c.id))),
       color: c.color,
     })),

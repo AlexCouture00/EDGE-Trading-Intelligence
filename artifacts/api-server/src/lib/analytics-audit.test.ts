@@ -64,6 +64,29 @@ test("PostgreSQL analytics audit: confluences, currencies, cash flows, edit/dele
       assert.equal(exact.combinations.find((g) => g.confluenceIds?.length === 2)!.sampleWarning, true);
       assert.ok(contains.warnings.some((w) => w.includes("Small sample")));
     });
+    await t.test("archived confluences disappear from individual results without losing historical links", async () => {
+      const before = await get({ minSample: "1" });
+      assert.equal(before.confluences.find((row) => row.id === a)!.totalTrades, 2);
+      const linksBefore = await db.select().from(tradeConfluences)
+        .where(eq(tradeConfluences.confluenceId, a)).orderBy(tradeConfluences.tradeId);
+      assert.ok(linksBefore.length > 0, "The archived confluence must have historical trade links");
+      await db.update(confluences).set({ archived: true }).where(eq(confluences.id, a));
+      try {
+        const archived = await get({ minSample: "1" });
+        assert.equal(archived.confluences.some((row) => row.id === a), false);
+        assert.equal(archived.confluences.some((row) => row.id === b), true);
+        assert.deepEqual(archived.metrics, before.metrics);
+        assert.deepEqual(archived.combinations, before.combinations);
+        const linksAfter = await db.select().from(tradeConfluences)
+          .where(eq(tradeConfluences.confluenceId, a)).orderBy(tradeConfluences.tradeId);
+        assert.deepEqual(linksAfter, linksBefore);
+      } finally {
+        await db.update(confluences).set({ archived: false }).where(eq(confluences.id, a));
+      }
+      const restored = await get({ minSample: "1" });
+      assert.deepEqual(restored.confluences.find((row) => row.id === a),
+        before.confluences.find((row) => row.id === a));
+    });
     await t.test("cash flows affect balance only; curve drawdown agrees with metrics", async () => {
       const all = await get();
       assert.equal(all.equity.at(-1)!.balance, 1400);

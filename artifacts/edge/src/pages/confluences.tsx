@@ -85,7 +85,7 @@ export default function Confluences() {
         {base.isLoading ? <LoadingBlock rows={8} /> : base.error ? <ErrorBlock error={base.error} retry={() => base.refetch()} /> : a && (
           <>
             {a.warnings.map((w, i) => <Caution key={i}>{w}</Caution>)}
-            <Panel title="Individual confluences" meta={`Each row: closed trades that included it · samples under ${minSample} flagged`}>
+            <Panel title="Individual confluences" meta={`Non-archived only · closed trades that included it · samples under ${minSample} flagged`}>
               <GroupTable rows={a.confluences} currency={cur} label="Confluence" showColor minSample={minSample}
                 onRowClick={(g) => setSel([g.id])}
                 empty={<div className="text-sm text-muted-foreground py-8 text-center">No tagged closed trades in scope yet.</div>} />
