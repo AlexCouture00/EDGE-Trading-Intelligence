@@ -10,7 +10,13 @@ Preserve all existing schemas, migrations, and data. Do not deploy or migrate da
 
 **Why:** The user explicitly required audit-first delivery and approval for deployment and data migration.
 
-**How to apply:** Compatibility implementation is authorized, preserving the premium interface and existing features. Keep actual deployment, database initialization/transfer, and identity migration separate and approval-gated. Review the existing Vercel feature branch and draft pull request before Git changes; do not merge main before review and testing.
+**How to apply:** Keep actual deployment, database initialization/transfer, and identity migration separate and approval-gated. Review changes and run validation before merging or pushing to main.
+
+The user reports EDGE is working in Vercel Production and wants the Replit workspace on `main` so future small updates can be committed and pushed directly to Production. A push to GitHub `main` triggers the Vercel Production deployment.
+
+**Why:** The user explicitly requested this workflow after the initial feature-branch setup. Vercel's production branch was independently confirmed as `main`.
+
+**How to apply:** Keep Replit on the updated `main` after the approved synchronization. Treat a push to `main` as a live Production deployment, not a Preview-only operation. Preserve the database and environment configuration.
 
 The user reports that their new Supabase project has Data API disabled and SSL enforcement enabled. They require the Session pooler on port 5432 for initialization, a read-only emptiness check first, and separate explicit confirmation before running the initializer.
 
