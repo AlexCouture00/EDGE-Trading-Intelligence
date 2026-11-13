@@ -46,7 +46,7 @@ export default function Strategies() {
       {an.data && an.data.byStrategy.length > 0 && (
         <div className="grid gap-4 xl:grid-cols-[1fr_420px] mb-4">
           <Panel title="Strategy performance" meta="Closed trades in scope"><GroupTable rows={an.data.byStrategy} currency={cur} label="Strategy" /></Panel>
-          <Panel title="Total R by strategy"><GroupBars rows={an.data.byStrategy} metric="totalR" currency={cur} height={200} /></Panel>
+          <Panel title="Total R by strategy" meta="0R totals have no visible bar; exact values are in the table."><GroupBars rows={an.data.byStrategy} metric="totalR" currency={cur} height={200} /></Panel>
         </div>
       )}
       {list.isLoading ? <LoadingBlock rows={6} /> : list.error ? <ErrorBlock error={list.error} retry={() => list.refetch()} /> : strategies.length === 0 ? (
@@ -69,10 +69,11 @@ export default function Strategies() {
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-4 gap-2 text-[12px] border-t border-card-border pt-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[12px] border-t border-card-border pt-3">
                   <div><div className="eyebrow">Trades</div><div className="num mt-1 flex items-center gap-1.5">{g?.totalTrades ?? 0}{g && <SampleBadge n={g.totalTrades} />}</div></div>
                   <div><div className="eyebrow">Win</div><div className="num mt-1">{ratio(g?.winRate)}</div></div>
                   <div><div className="eyebrow">Avg R</div><div className="mt-1"><R v={g?.averageR} /></div></div>
+                  <div><div className="eyebrow">Total R</div><div className="mt-1"><R v={g && g.rSample > 0 ? g.totalR : null} /></div></div>
                   <div><div className="eyebrow">Net</div><div className="mt-1">{g ? <Money v={g.netPnl} currency={cur} /> : <span className="num">—</span>}</div></div>
                 </div>
                 <div className="text-[11px] text-muted-foreground">PF {g ? pf(g) : "—"} · {[s.entryRules, s.exitRules, s.riskRules].filter(Boolean).length}/3 rule sets written</div>

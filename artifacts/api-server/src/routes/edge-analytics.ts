@@ -43,10 +43,10 @@ router.get("/analytics", async (req, res): Promise<void> => {
   }
   const min = query.minSample ?? 5;
   const group = (id: string, name: string, items: LoadedTrade[]) => ({ id, name, ...summarize(items, opening.toString()), sampleWarning: items.length < 20 });
-  const groups = (key: (t: LoadedTrade) => string) => {
+  const groups = (key: (t: LoadedTrade) => string, label: (t: LoadedTrade) => string = key) => {
     const sets = new Map<string, LoadedTrade[]>();
     for (const t of closed) { const k = key(t); sets.set(k, [...(sets.get(k) ?? []), t]); }
-    return [...sets.entries()].map(([id, list]) => group(id, id, list));
+    return [...sets.entries()].map(([id, list]) => group(id, label(list[0]!), list));
   };
   const timezone = pref[0]?.timezone ?? "UTC";
   const month = (t: LoadedTrade) => {
@@ -78,7 +78,7 @@ router.get("/analytics", async (req, res): Promise<void> => {
     isDemo: res.locals.isDemo, currency, metrics, equity,
     monthly: groups(month).sort((a, b) => a.id.localeCompare(b.id)),
     byInstrument: groups((t) => t.symbol),
-    byStrategy: groups((t) => t.strategyName ?? "Unassigned"),
+    byStrategy: groups((t) => t.strategyId ?? "Unassigned", (t) => t.strategyName ?? "Unassigned"),
     byDirection: groups((t) => t.direction),
     byEmotion: groups((t) => t.emotion || "Not recorded"),
     byGrade: groups((t) => t.grade || "Not graded"),

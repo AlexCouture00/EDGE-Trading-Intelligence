@@ -87,6 +87,51 @@ test("PostgreSQL analytics audit: confluences, currencies, cash flows, edit/dele
       assert.deepEqual(restored.confluences.find((row) => row.id === a),
         before.confluences.find((row) => row.id === a));
     });
+    await t.test("strategy IDs connect cards to table metrics and preserve zero R, renames and filters", async () => {
+      const created = await db.insert(strategies).values([
+        { ownerId: owner, name: "Mean Reversion" },
+        { ownerId: owner, name: "Momentum" },
+        { ownerId: owner, name: "Mean Reversion" },
+      ]).returning();
+      const mean = created[0]!, momentum = created[1]!, sameName = created[2]!;
+      const saved: string[] = [];
+      try {
+        for (const input of [
+          { strategyId: mean.id, grossPnl: "100", exitAt: "2026-01-01T15:00:00Z" },
+          { strategyId: mean.id, grossPnl: "-100", exitAt: "2026-01-03T15:00:00Z" },
+          { strategyId: momentum.id, grossPnl: "200", exitAt: "2026-01-01T15:00:00Z" },
+          { strategyId: sameName.id, grossPnl: "50", exitAt: "2026-01-01T15:00:00Z" },
+        ]) {
+          saved.push(await saveTrade(owner, CreateTradeBody.parse({ ...base, ...input })));
+        }
+        const all = await get();
+        const byId = new Map(all.byStrategy.map((row) => [row.id, row]));
+        const meanMetrics = byId.get(mean.id)!;
+        assert.ok(meanMetrics, "Strategy cards must find metrics using the saved strategy UUID");
+        assert.equal(meanMetrics.name, "Mean Reversion");
+        assert.equal(meanMetrics.totalTrades, 2);
+        assert.equal(meanMetrics.rSample, 2);
+        assert.equal(meanMetrics.averageR, 0);
+        assert.equal(meanMetrics.totalR, 0);
+        assert.equal(byId.get(momentum.id)!.averageR, 2);
+        assert.equal(byId.get(momentum.id)!.totalR, 2);
+        assert.equal(byId.get(sameName.id)!.averageR, 0.5);
+        assert.equal(all.byStrategy.filter((row) => row.name === "Mean Reversion").length, 2);
+        const filtered = await get({ strategyId: mean.id, accountId: account!.id, from: "2026-01-02T00:00:00Z" });
+        assert.equal(filtered.byStrategy.length, 1);
+        assert.equal(filtered.byStrategy[0]!.id, mean.id);
+        assert.equal(filtered.byStrategy[0]!.averageR, -1);
+        assert.equal(filtered.byStrategy[0]!.totalR, -1);
+        await db.update(strategies).set({ name: "Renamed Mean Reversion" }).where(eq(strategies.id, mean.id));
+        const renamed = (await get()).byStrategy.find((row) => row.id === mean.id)!;
+        assert.equal(renamed.name, "Renamed Mean Reversion");
+        assert.equal(renamed.averageR, 0);
+        assert.equal(renamed.totalR, 0);
+      } finally {
+        for (const id of saved) await db.delete(trades).where(eq(trades.id, id));
+        for (const strategy of created) await db.delete(strategies).where(eq(strategies.id, strategy.id));
+      }
+    });
     await t.test("cash flows affect balance only; curve drawdown agrees with metrics", async () => {
       const all = await get();
       assert.equal(all.equity.at(-1)!.balance, 1400);
