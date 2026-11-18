@@ -147,16 +147,23 @@ PostgreSQL cluster and override `DATABASE_URL` only for this command. Never weak
 its local/Docker evidence checks or point it at Supabase. Live Supabase auth and
 browser tests still require the real configured owner and Preview deployment.
 
-## Daily calendar reflections: pending additive migration
+## Daily calendar reflections: additive migration
 
 Daily reflections use the ninth table, `edge_day_notes`, introduced in
 `lib/db/drizzle/0001_kind_terrax.sql`. The original eight tables and their data are
 not altered. Notes are keyed by the authenticated owner and a calendar date;
 they are independent of account, strategy and trade filters.
 
+The owner-approved migration has been applied to the existing Supabase project.
+Verified TLS, migration hashes, the new table and its restrictions all passed.
+Before-and-after row fingerprints matched for all eight existing tables, and
+the notes table remained empty. The application changes have not been pushed
+or deployed; Preview validation and publishing remain separate approval steps.
+
 - **Do not run `initialize:external` on an existing Supabase project.**
-- Applying this migration to Supabase and publishing the app require separate
-  explicit approval. Until then, the deployed application stays unchanged.
+- Applying migrations to Supabase and publishing the app require separate
+  explicit approval. Approval of the table migration does not authorize an app
+  deployment; the deployed application remains unchanged.
 - Before an approved upgrade, verify the Session pooler target project and TLS,
   inspect the existing Drizzle journal, and confirm the first migration is
   already recorded and that `edge_day_notes` does not already exist.
