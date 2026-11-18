@@ -8,6 +8,41 @@ servers:
 security:
   - PersonalBearer: []
 paths:
+  /edge/day-notes:
+    get:
+      operationId: listDayNotes
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' } }
+        - { name: to, in: query, required: true, schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' } }
+      responses:
+        "200":
+          description: Daily reflections in the inclusive date range
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/DayNote" } }
+        "400": { description: Invalid date range }
+  /edge/day-notes/{day}:
+    parameters:
+      - { name: day, in: path, required: true, schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' } }
+    put:
+      operationId: saveDayNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DayNoteInput" }
+      responses:
+        "200":
+          description: Saved daily reflection
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DayNote" }
+        "400": { description: Invalid date or note }
+    delete:
+      operationId: deleteDayNote
+      responses:
+        "204": { description: Daily reflection removed if present }
+        "400": { description: Invalid date }
   /auth/session:
     get:
       operationId: getPrivateSession
@@ -311,6 +346,20 @@ components:
     StrategyId: { name: strategyId, in: query, schema: { type: string } }
     Direction: { name: direction, in: query, schema: { type: string, enum: [long, short] } }
   schemas:
+    DayNoteInput:
+      type: object
+      required: [wentWell, wentBadly]
+      properties:
+        wentWell: { type: string, maxLength: 10000 }
+        wentBadly: { type: string, maxLength: 10000 }
+    DayNote:
+      type: object
+      required: [day, wentWell, wentBadly, updatedAt]
+      properties:
+        day: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$', description: Calendar day, never a timestamp }
+        wentWell: { type: string }
+        wentBadly: { type: string }
+        updatedAt: { type: string, format: date-time }
     HealthStatus:
       type: object
       required: [status]

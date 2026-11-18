@@ -121,6 +121,29 @@ async function main() {
       const rerun = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
       assert.equal(rerun.rows[0].n, expected);
       await assert.rejects(initializeEmptyDatabase(client), /not a new empty database/);
+      stage = "checking additive upgrade preserves existing journal data";
+      // Simulate the already-initialized release in this disposable database.
+      // Never downgrade or run this fixture setup on the real Supabase project.
+      const noteMigration = await client.query("SELECT id FROM drizzle.__drizzle_migrations ORDER BY created_at DESC LIMIT 1");
+      await client.query("DROP TABLE public.edge_day_notes");
+      await client.query("DELETE FROM drizzle.__drizzle_migrations WHERE id=$1", [noteMigration.rows[0].id]);
+      const canary = await client.query(
+        `INSERT INTO public.edge_accounts(owner_id,name,currency,initial_balance,type)
+         VALUES ('migration-upgrade-fixture','Preserve existing account','USD','1234.56','backtesting') RETURNING *`,
+      );
+      await migrate(drizzle(client), { migrationsFolder });
+      const preserved = await client.query("SELECT * FROM public.edge_accounts WHERE id=$1", [canary.rows[0].id]);
+      assert.deepEqual(preserved.rows, canary.rows);
+      const notesSecurity = await client.query(
+        `SELECT relrowsecurity, NOT EXISTS (
+          SELECT 1 FROM aclexplode(COALESCE(relacl, acldefault('r',relowner))) a WHERE a.grantee=0
+         ) AS no_public_grants FROM pg_class WHERE oid='public.edge_day_notes'::regclass`,
+      );
+      assert.equal(notesSecurity.rows[0].relrowsecurity, true);
+      assert.equal(notesSecurity.rows[0].no_public_grants, true);
+      const upgradeJournal = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
+      assert.equal(upgradeJournal.rows[0].n, expected);
+      await client.query("DELETE FROM public.edge_accounts WHERE id=$1", [canary.rows[0].id]);
     } finally { client.release(); }
     // Run the actual financial/ownership suite against this separate DB.
     stage = "running API tests on isolated database";
@@ -129,7 +152,7 @@ async function main() {
       stdio: "inherit",
     });
     assert.equal(result.status, 0, "API tests against isolated migrated database failed");
-    process.stdout.write("Migration validation passed: 8 tables, 6 foreign keys, RLS, empty data, journal, repeat safety and API tests.\n");
+    process.stdout.write(`Migration validation passed: ${edgeTables.length} tables, 6 foreign keys, RLS, empty data, journal, repeat safety, additive upgrade preservation and API tests.\n`);
   } catch (error) {
     reportFailure(stage, error);
     process.exitCode = 1;

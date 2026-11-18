@@ -13,3 +13,9 @@ When Orval `useDates` is enabled, include `date` in query coercion as well as bo
 **Why:** HTTP query parameters arrive as strings. Non-coercing generated date validation rejects real journal and analytics date filters even though TypeScript and all-time views pass.
 
 **How to apply:** Keep a real HTTP route regression using ISO query strings, including millisecond boundaries, whenever changing the generator configuration.
+
+Calendar-only dates must remain `YYYY-MM-DD` strings throughout the API; do not model them as timestamp instants.
+
+**Why:** With this Orval configuration, OpenAPI `format: date` generates JavaScript Date validation/coercion, including non-coercing path schemas. HTTP date paths can then fail validation, and serialized responses gain a time suffix that no longer matches calendar-day keys.
+
+**How to apply:** For calendar-only values, use an OpenAPI string with a date-shaped pattern, a PostgreSQL date in string mode, and a real-date check at the API boundary. Keep timestamp coercion for actual instants.

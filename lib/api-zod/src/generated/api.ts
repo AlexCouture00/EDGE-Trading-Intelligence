@@ -8,6 +8,66 @@
 import * as zod from 'zod';
 
 
+export const listDayNotesQueryFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const listDayNotesQueryToRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const ListDayNotesQueryParams = zod.object({
+  "from": zod.coerce.string().regex(listDayNotesQueryFromRegExp),
+  "to": zod.coerce.string().regex(listDayNotesQueryToRegExp)
+})
+
+export const listDayNotesResponseDayRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const ListDayNotesResponseItem = zod.object({
+  "day": zod.string().regex(listDayNotesResponseDayRegExp).describe('Calendar day'),
+  "wentWell": zod.string(),
+  "wentBadly": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListDayNotesResponse = zod.array(ListDayNotesResponseItem)
+
+
+export const saveDayNotePathDayRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const SaveDayNoteParams = zod.object({
+  "day": zod.coerce.string().regex(saveDayNotePathDayRegExp)
+})
+
+export const saveDayNoteBodyWentWellMax = 10000;
+
+export const saveDayNoteBodyWentBadlyMax = 10000;
+
+
+
+export const SaveDayNoteBody = zod.object({
+  "wentWell": zod.string().max(saveDayNoteBodyWentWellMax),
+  "wentBadly": zod.string().max(saveDayNoteBodyWentBadlyMax)
+})
+
+export const saveDayNoteResponseDayRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const SaveDayNoteResponse = zod.object({
+  "day": zod.string().regex(saveDayNoteResponseDayRegExp).describe('Calendar day'),
+  "wentWell": zod.string(),
+  "wentBadly": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const deleteDayNotePathDayRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const DeleteDayNoteParams = zod.object({
+  "day": zod.coerce.string().regex(deleteDayNotePathDayRegExp)
+})
+
+export const DeleteDayNoteResponse = zod.void()
+
+
 /**
  * Returns the single authorized Supabase user; rejects every other identity.
  */

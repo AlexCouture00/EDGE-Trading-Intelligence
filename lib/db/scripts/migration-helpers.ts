@@ -8,6 +8,7 @@ export const migrationsFolder = fileURLToPath(new URL("../drizzle/", import.meta
 export const edgeTables = [
   "edge_accounts", "edge_cash_flows", "edge_settings", "edge_confluences",
   "edge_strategies", "edge_trades", "edge_executions", "edge_trade_confluences",
+  "edge_day_notes",
 ];
 
 export async function initializeEmptyDatabase(client: PoolClient) {

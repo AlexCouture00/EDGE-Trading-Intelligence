@@ -1,7 +1,7 @@
 # EDGE: private, single-user Vercel + Supabase setup
 
 EDGE is a personal journal, not a SaaS. Keep the existing React/Vite `edge`,
-Express `api-server`, eight Drizzle tables, financial logic, analytics and design.
+Express `api-server`, Drizzle tables, financial logic, analytics and design.
 Both services stay in one Vercel project through the root `vercel.json`.
 Never merge to main, deploy Production, reset the database, or migrate owner IDs
 without the user's explicit approval.
@@ -146,3 +146,31 @@ database. If the workspace development database is remote, start a separate loca
 PostgreSQL cluster and override `DATABASE_URL` only for this command. Never weaken
 its local/Docker evidence checks or point it at Supabase. Live Supabase auth and
 browser tests still require the real configured owner and Preview deployment.
+
+## Daily calendar reflections: pending additive migration
+
+Daily reflections use the ninth table, `edge_day_notes`, introduced in
+`lib/db/drizzle/0001_kind_terrax.sql`. The original eight tables and their data are
+not altered. Notes are keyed by the authenticated owner and a calendar date;
+they are independent of account, strategy and trade filters.
+
+- **Do not run `initialize:external` on an existing Supabase project.**
+- Applying this migration to Supabase and publishing the app require separate
+  explicit approval. Until then, the deployed application stays unchanged.
+- Before an approved upgrade, verify the Session pooler target project and TLS,
+  inspect the existing Drizzle journal, and confirm the first migration is
+  already recorded and that `edge_day_notes` does not already exist.
+- Run the Drizzle migrator against that verified `MIGRATION_DATABASE_URL`, using
+  `databasePoolConfig(process.env, true)` (including the verified CA).
+  Never use schema push, reset, the empty-database initializer, or migrations
+  during Vercel builds.
+- The new migration enables RLS and revokes `PUBLIC`, `anon`, and `authenticated`
+  table privileges. The trusted Express connection remains the only data path;
+  the API derives ownership from the verified session, never the request body.
+- After applying, verify the ninth table, RLS, revoked privileges, migration
+  journal, and unchanged existing table row counts. Validate saving/editing/
+  removing a synthetic note in Preview before any approved Production push.
+
+`validate:migrations` checks both fresh initialization and the additive upgrade
+on a disposable local database, including preservation of an existing account.
+No Supabase migration has been authorized merely by adding these files.

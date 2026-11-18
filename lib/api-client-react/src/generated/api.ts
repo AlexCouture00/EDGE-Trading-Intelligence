@@ -32,6 +32,8 @@ import type {
   CashFlowInput,
   Confluence,
   ConfluenceInput,
+  DayNote,
+  DayNoteInput,
   GetAnalyticsParams,
   GetPrivateSession200,
   GetSettingsParams,
@@ -40,6 +42,7 @@ import type {
   ListAccountsParams,
   ListCashFlowsParams,
   ListConfluencesParams,
+  ListDayNotesParams,
   ListStrategiesParams,
   ListTradesParams,
   Settings,
@@ -75,6 +78,259 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListDayNotesUrl = (params: ListDayNotesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/edge/day-notes?${stringifiedParams}` : `/api/edge/day-notes`
+}
+
+export const listDayNotes = async (params: ListDayNotesParams, options?: Parameters<typeof customFetch>[1]): Promise<DayNote[]> => {
+
+  return customFetch<DayNote[]>(getListDayNotesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDayNotesQueryKey = (params?: ListDayNotesParams,) => {
+    return [
+    `/api/edge/day-notes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListDayNotesQueryOptions = <TData = Awaited<ReturnType<typeof listDayNotes>>, TError = ErrorType<void>>(params: ListDayNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDayNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDayNotesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDayNotes>>> = ({ signal }) => listDayNotes(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDayNotes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListDayNotesQueryResult = NonNullable<Awaited<ReturnType<typeof listDayNotes>>>
+export type ListDayNotesQueryError = ErrorType<void>
+
+
+export function useListDayNotes<TData = Awaited<ReturnType<typeof listDayNotes>>, TError = ErrorType<void>>(
+ params: ListDayNotesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDayNotes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDayNotes>>,
+          TError,
+          Awaited<ReturnType<typeof listDayNotes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDayNotes<TData = Awaited<ReturnType<typeof listDayNotes>>, TError = ErrorType<void>>(
+ params: ListDayNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDayNotes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDayNotes>>,
+          TError,
+          Awaited<ReturnType<typeof listDayNotes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDayNotes<TData = Awaited<ReturnType<typeof listDayNotes>>, TError = ErrorType<void>>(
+ params: ListDayNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDayNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListDayNotes<TData = Awaited<ReturnType<typeof listDayNotes>>, TError = ErrorType<void>>(
+ params: ListDayNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDayNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListDayNotesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveDayNoteUrl = (day: string,) => {
+
+
+
+
+  return `/api/edge/day-notes/${day}`
+}
+
+export const saveDayNote = async (day: string,
+    dayNoteInput: DayNoteInput, options?: Parameters<typeof customFetch>[1]): Promise<DayNote> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<DayNote>(getSaveDayNoteUrl(day),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dayNoteInput)
+  }
+);}
+
+
+
+
+
+export const getSaveDayNoteMutationKey = () => ['saveDayNote'] as const;
+
+export const getSaveDayNoteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveDayNote>>, TError,SaveDayNoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveDayNote>>, TError,SaveDayNoteMutationVariables, TContext> => {
+
+const mutationKey = getSaveDayNoteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveDayNote>>, SaveDayNoteMutationVariables> = (props) => {
+          const {day,data} = props ?? {};
+
+          return  saveDayNote(day,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveDayNoteMutationResult = NonNullable<Awaited<ReturnType<typeof saveDayNote>>>
+    export type SaveDayNoteMutationBody = BodyType<DayNoteInput>
+    export type SaveDayNoteMutationError = ErrorType<void>
+    export type SaveDayNoteMutationVariables = {day: string;data: BodyType<DayNoteInput>}
+
+    export const useSaveDayNote = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveDayNote>>, TError,SaveDayNoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof saveDayNote>>,
+        TError,
+        SaveDayNoteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveDayNoteMutationOptions(options), queryClient);
+    }
+
+export const getDeleteDayNoteUrl = (day: string,) => {
+
+
+
+
+  return `/api/edge/day-notes/${day}`
+}
+
+export const deleteDayNote = async (day: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteDayNoteUrl(day),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteDayNoteMutationKey = () => ['deleteDayNote'] as const;
+
+export const getDeleteDayNoteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDayNote>>, TError,DeleteDayNoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteDayNote>>, TError,DeleteDayNoteMutationVariables, TContext> => {
+
+const mutationKey = getDeleteDayNoteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteDayNote>>, DeleteDayNoteMutationVariables> = (props) => {
+          const {day} = props ?? {};
+
+          return  deleteDayNote(day,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteDayNoteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDayNote>>>
+
+    export type DeleteDayNoteMutationError = ErrorType<void>
+    export type DeleteDayNoteMutationVariables = {day: string}
+
+    export const useDeleteDayNote = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDayNote>>, TError,DeleteDayNoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteDayNote>>,
+        TError,
+        DeleteDayNoteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteDayNoteMutationOptions(options), queryClient);
+    }
 
 export const getGetPrivateSessionUrl = () => {
 

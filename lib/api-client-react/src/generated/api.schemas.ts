@@ -5,6 +5,24 @@
  * EDGE Trading Intelligence
  * OpenAPI spec version: 0.1.0
  */
+export interface DayNoteInput {
+  /** @maxLength 10000 */
+  wentWell: string;
+  /** @maxLength 10000 */
+  wentBadly: string;
+}
+
+export interface DayNote {
+  /**
+     * Calendar day
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  day: string;
+  wentWell: string;
+  wentBadly: string;
+  updatedAt: string;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -358,6 +376,17 @@ export const DirectionParameter = {
   long: 'long',
   short: 'short',
 } as const;
+
+export type ListDayNotesParams = {
+/**
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+from: string;
+/**
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+to: string;
+};
 
 export type GetPrivateSession200 = {
   id: string;
