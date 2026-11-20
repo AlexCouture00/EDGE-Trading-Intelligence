@@ -80,6 +80,7 @@ router.get("/analytics", async (req, res): Promise<void> => {
     byInstrument: groups((t) => t.symbol),
     byStrategy: groups((t) => t.strategyId ?? "Unassigned", (t) => t.strategyName ?? "Unassigned"),
     byDirection: groups((t) => t.direction),
+    bySession: groups((t) => t.session.trim() || "Not recorded").sort((a, b) => a.name.localeCompare(b.name)),
     byEmotion: groups((t) => t.emotion || "Not recorded"),
     byGrade: groups((t) => t.grade || "Not graded"),
     confluences: allConfluences.filter((c) => !c.archived).map((c) => ({

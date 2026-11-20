@@ -23,6 +23,7 @@ const DEC = /^-?\d+(\.\d+)?$/;
 const TEXT = ["symbol", "timeframe", "higherTimeframe", "session", "regime", "emotion", "thesis", "entryReason", "management", "exitReason", "wentWell", "wentWrong", "lesson", "chartUrl"] as const;
 const NUMS = ["entryPrice", "exitPrice", "stopLoss", "takeProfit", "quantity", "multiplier", "initialRisk", "grossPnl"] as const;
 const FEES = ["commission", "funding", "slippage"] as const;
+const SESSIONS = ["Asia", "London", "New York", "London/NY overlap"];
 
 function toLocal(iso?: string | null, timezone = "UTC") {
   if (!iso) return "";
@@ -344,9 +345,11 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
           <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
             <Field label="Execution TF"><Input value={f.timeframe} onChange={(e) => set("timeframe", e.target.value)} placeholder="H1" className={inp} data-testid="input-timeframe" /></Field>
             <Field label="Higher TF"><Input value={f.higherTimeframe} onChange={(e) => set("higherTimeframe", e.target.value)} placeholder="D1" className={inp} data-testid="input-htf" /></Field>
-            <Field label="Session"><Input value={f.session} onChange={(e) => set("session", e.target.value)} placeholder="London" list="sessions" className={inp} data-testid="input-session" /></Field>
+            <Field label="Session"><NSelect value={f.session} onChange={(v) => set("session", v)} options={[
+              ...SESSIONS.map((value) => ({ value, label: value })),
+              ...(initial?.session && !SESSIONS.includes(initial.session) ? [{ value: initial.session, label: `${initial.session} (saved session)`, disabled: true }] : []),
+            ]} placeholder="Choose session" allowNone noneLabel="Not recorded" className={inp} testId="input-session" /></Field>
             <Field label="Regime"><Input value={f.regime} onChange={(e) => set("regime", e.target.value)} placeholder="Trending" list="regimes" className={inp} data-testid="input-regime" /></Field>
-            <datalist id="sessions"><option value="Asia" /><option value="London" /><option value="New York" /><option value="London/NY overlap" /></datalist>
             <datalist id="regimes"><option value="Trending" /><option value="Ranging" /><option value="High volatility" /><option value="News-driven" /></datalist>
           </div>
         </Sec>

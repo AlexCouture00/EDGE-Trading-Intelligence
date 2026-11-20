@@ -64,6 +64,62 @@ test("PostgreSQL analytics audit: confluences, currencies, cash flows, edit/dele
       assert.equal(exact.combinations.find((g) => g.confluenceIds?.length === 2)!.sampleWarning, true);
       assert.ok(contains.warnings.some((w) => w.includes("Small sample")));
     });
+    await t.test("session performance uses filtered closed trades and preserves historical sessions", async () => {
+      const [sessionAccount] = await db.insert(accounts).values({
+        ownerId: owner, name: "Session audit", currency: "USD", initialBalance: "1000", type: "backtesting",
+      }).returning();
+      const saved: string[] = [];
+      try {
+        const fixtures = [
+          { session: "London", grossPnl: "100", initialRisk: "100" },
+          { session: "London", grossPnl: "-50", initialRisk: "100" },
+          { session: "Asia", grossPnl: "200", initialRisk: null },
+          { session: "New York", grossPnl: "0", initialRisk: "100" },
+          { session: "London/NY overlap", grossPnl: "-25", initialRisk: "25" },
+          { session: "   ", grossPnl: "50", initialRisk: "50" },
+          { session: "Sydney", grossPnl: "75", initialRisk: "25" },
+        ];
+        for (const [i, fixture] of fixtures.entries()) {
+          saved.push(await saveTrade(owner, CreateTradeBody.parse({
+            ...base, ...fixture, accountId: sessionAccount!.id, confluenceIds: [],
+            exitAt: `2026-01-0${i + 1}T15:00:00Z`,
+          })));
+        }
+        saved.push(await saveTrade(owner, CreateTradeBody.parse({
+          ...base, accountId: sessionAccount!.id, session: "Open only", status: "open",
+          exitAt: null, exitPrice: null, confluenceIds: [],
+        })));
+        const all = await get({ accountId: sessionAccount!.id });
+        assert.equal(all.metrics.totalTrades, 7);
+        assert.equal(all.bySession.length, 6);
+        assert.equal(all.bySession.reduce((n, g) => n + g.totalTrades, 0), 7);
+        assert.equal(all.bySession.some((g) => g.name === "Open only"), false);
+        const london = all.bySession.find((g) => g.id === "London")!;
+        assert.equal(london.totalTrades, 2);
+        assert.equal(london.netPnl, "50.00000000");
+        assert.equal(london.winRate, 50);
+        assert.equal(london.averageR, 0.25);
+        assert.equal(london.totalR, 0.5);
+        assert.equal(london.profitFactor, 2);
+        assert.equal(london.sampleWarning, true);
+        const asia = all.bySession.find((g) => g.id === "Asia")!;
+        assert.equal(asia.rSample, 0);
+        assert.equal(asia.averageR, null);
+        assert.equal(all.bySession.find((g) => g.id === "New York")!.totalR, 0);
+        assert.equal(all.bySession.find((g) => g.id === "London/NY overlap")!.totalR, -1);
+        assert.equal(all.bySession.find((g) => g.id === "Not recorded")!.totalTrades, 1);
+        assert.equal(all.bySession.find((g) => g.id === "Sydney")!.totalR, 3);
+        const filtered = await get({ accountId: sessionAccount!.id, to: "2026-01-01T23:59:59.999Z" });
+        assert.equal(filtered.bySession.length, 1);
+        assert.equal(filtered.bySession[0]!.name, "London");
+        assert.equal(filtered.bySession[0]!.totalR, 1);
+        const empty = await get({ accountId: sessionAccount!.id, from: "2027-01-01T00:00:00Z" });
+        assert.deepEqual(empty.bySession, []);
+      } finally {
+        for (const id of saved) await db.delete(trades).where(eq(trades.id, id));
+        await db.delete(accounts).where(eq(accounts.id, sessionAccount!.id));
+      }
+    });
     await t.test("archived confluences disappear from individual results without losing historical links", async () => {
       const before = await get({ minSample: "1" });
       assert.equal(before.confluences.find((row) => row.id === a)!.totalTrades, 2);

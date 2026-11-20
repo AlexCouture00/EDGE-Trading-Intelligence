@@ -1373,6 +1373,31 @@ export const GetAnalyticsResponse = zod.object({
   "confluenceIds": zod.array(zod.string()).optional(),
   "sampleWarning": zod.boolean().optional()
 }))),
+  "bySession": zod.array(zod.object({
+  "totalTrades": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "breakeven": zod.number().int(),
+  "winRate": zod.number().nullable(),
+  "netPnl": zod.string(),
+  "averageR": zod.number().nullable(),
+  "medianR": zod.number().nullable(),
+  "totalR": zod.number(),
+  "profitFactor": zod.number().nullable().describe('Null when no losses; see profitFactorInfinite'),
+  "profitFactorInfinite": zod.boolean().optional(),
+  "maxDrawdown": zod.string(),
+  "maxDrawdownPercent": zod.number().nullish(),
+  "ruleAdherence": zod.number().nullable(),
+  "rSample": zod.number().int(),
+  "averageHoldHours": zod.number().nullable(),
+  "streak": zod.number().int()
+}).and(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "color": zod.string().optional(),
+  "confluenceIds": zod.array(zod.string()).optional(),
+  "sampleWarning": zod.boolean().optional()
+}))),
   "byEmotion": zod.array(zod.object({
   "totalTrades": zod.number().int(),
   "wins": zod.number().int(),

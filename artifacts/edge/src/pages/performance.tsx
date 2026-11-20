@@ -44,6 +44,10 @@ export default function Performance() {
             <Panel title="By instrument"><GroupTable rows={a.byInstrument} currency={cur} label="Symbol" /></Panel>
             <Panel title="By direction"><GroupTable rows={a.byDirection} currency={cur} label="Side" /></Panel>
           </div>
+          <Panel title="By session" meta="Recorded trade session · closed trades · current filters">
+            <GroupTable rows={a.bySession} currency={cur} label="Session" />
+            <p className="mt-3 text-xs text-muted-foreground">Compare trade count, win rate, net P&amp;L and R by session. Small samples are flagged; results become more meaningful as you log more trades.</p>
+          </Panel>
         </div>
       )}
     </div>
