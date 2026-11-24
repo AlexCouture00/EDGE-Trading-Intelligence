@@ -8,6 +8,7 @@ import { NSelect } from "@/components/nselect";
 import { FilterBar } from "@/components/filter-bar";
 import { DirPill, Empty, ErrorBlock, LoadingBlock, PageHeader, Panel, R, StatusPill, WriteGate } from "@/components/kit";
 import { totalRecordedR } from "@/lib/journal-r";
+import { rFmt } from "@/lib/format";
 import { useFilters } from "@/lib/filters";
 import { useMode } from "@/lib/mode";
 import { useDateFormatter } from "@/lib/time";
@@ -80,8 +81,8 @@ export default function Journal() {
             <table className="w-full text-[12.5px]">
               <thead>
                 <tr className="text-left text-muted-foreground border-b border-card-border">
-                  {["Date", "Symbol", "Side", "Status", "Strategy", "Confluences", "Grade", "R"].map((h, i) => (
-                    <th key={h} className={`font-normal px-3 py-2.5 whitespace-nowrap ${i === 0 ? "pl-4" : ""} ${i >= 7 ? "text-right" : ""} ${i === 8 ? "pr-4" : ""}`}>{h}</th>
+                  {["Date", "Symbol", "Side", "Status", "Strategy", "MFE", "Session", "R"].map((h, i) => (
+                    <th key={h} className={`font-normal px-3 py-2.5 whitespace-nowrap ${i === 0 ? "pl-4" : ""} ${i === 5 || i === 7 ? "text-right" : ""} ${i === 7 ? "pr-4" : ""}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -93,10 +94,8 @@ export default function Journal() {
                     <td className="px-3 py-2.5"><DirPill d={t.direction} /></td>
                     <td className="px-3 py-2.5"><StatusPill status={t.status} /></td>
                     <td className="px-3 py-2.5 text-muted-foreground truncate max-w-[160px]">{t.strategyName ?? "—"}</td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-1">{t.confluences.slice(0, 6).map((c) => <span key={c.id} title={c.name} className="h-2 w-2 rounded-full" style={{ background: c.color ?? "#888" }} />)}<span className="num text-[11px] text-muted-foreground ml-1">{t.confluences.length || ""}</span></div>
-                    </td>
-                    <td className="px-3 py-2.5 num">{t.grade ?? "—"}</td>
+                    <td className="px-3 py-2.5 num text-right whitespace-nowrap" data-testid={`cell-mfe-${t.id}`}>{rFmt(t.mfeR)}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap" data-testid={`cell-session-${t.id}`}>{t.session?.trim() || "—"}</td>
                     <td className="pr-4 px-3 py-2.5 text-right"><R v={t.realizedR} /></td>
                   </tr>
                 ))}
