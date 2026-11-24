@@ -182,7 +182,7 @@ or deployed; Preview validation and publishing remain separate approval steps.
 on a disposable local database, including preservation of an existing account.
 No Supabase migration has been authorized merely by adding these files.
 
-## Prop Firm Manager: pending additive migration
+## Prop Firm Manager: approved additive migration applied
 
 The local application now includes `/prop-manager` under Record. Its storage is
 introduced by `lib/db/drizzle/0002_cultured_taskmaster.sql`, which creates **seven
@@ -200,11 +200,30 @@ This brings a fully migrated database to 16 EDGE tables. The migration only
 creates new tables, their indexes and foreign keys, enables their RLS, and revokes
 direct `PUBLIC`, `anon` and `authenticated` access. It does not alter existing
 journal tables, populate demo records, reset the database, copy data, or run at
-startup/build time. No Supabase migration or deployment is authorized by these
-local changes. Until storage is approved and installed, the new page shows an
-explicit "Storage not installed" message; the existing journal remains usable.
+startup/build time.
 
-Before an explicitly approved activation:
+The owner explicitly approved this storage migration, and it was applied to the
+intended Supabase project on 2026-11-24 using the certificate-verified Session
+pooler on port 5432. Postchecks passed: 16 tables, all three matching migration
+entries, seven empty new tables, 14 foreign keys, RLS enabled on each new table,
+zero policies and no direct `PUBLIC`, `anon` or `authenticated` privileges.
+Before/after counts and row-content fingerprints matched for all nine original
+tables. No user data or synthetic fixtures were written. Provider-managed
+backup/recovery availability could not be verified from the available access;
+no backup was created or claimed.
+
+The Replit API runtime uses a **different development database**, verified
+read-only after this migration. It still has no prop-manager tables and therefore
+continues to show "Storage not installed" for this feature. No development schema,
+connection string or environment setting was changed. Do not silently point
+development at Supabase or migrate its schema. Obtain separate approval if
+development storage should also be enabled.
+
+No GitHub push or Vercel deployment was performed. Storage approval is not
+deployment approval; a Vercel Preview using Supabase is the next validation step.
+Do not rerun this migration blindly: first inspect the now-updated journal.
+
+Procedure used for the approved Supabase activation:
 
 1. Confirm the intended Supabase project using the existing Session pooler
    `MIGRATION_DATABASE_URL` on port 5432 and certificate-verified TLS with
@@ -215,9 +234,12 @@ Before an explicitly approved activation:
    two migrations are present and the seven new tables do not exist. Stop on any
    unexpected schema or migration history; never use `initialize:external`,
    `push`, `push-force`, reset or seed against this existing database.
-3. Verify provider recovery/backup availability, then record safe before counts
-   and row-content fingerprints for the existing tables. These checks are not a
-   database backup. Do not export real records into the repository.
+3. Check and report provider recovery/backup availability; do not claim a restore
+   point when it cannot be verified. Record safe before counts and row-content
+   fingerprints for the existing tables. These checks are not a database backup.
+   This additive migration does not modify existing rows; any later destructive
+   migration requires separate approval and confirmed recovery arrangements.
+   Do not export real records into the repository.
 4. After the owner explicitly approves this specific additive migration, use
    Drizzle's `migrate()` on one verified Session connection with an advisory lock
    held throughout. Only the pending reviewed migration should run. No production
