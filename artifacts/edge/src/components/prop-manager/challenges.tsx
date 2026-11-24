@@ -5,14 +5,12 @@ import { accountSnapshot, challengeProgress, type Portfolio } from "@workspace/p
 import { Empty, Money, Panel } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { money } from "@/lib/format";
-import { CHALLENGE_STATUS, EditorDialog, Field, MONEY_RE, MoneyIn, Pill, STRUCTURES, Sel, TextArea, TextIn, UMONEY_RE, nn, statusTone, today, usePropMutations } from "./shared";
-
-type Draft = Omit<PropChallengeInput, "dailyLoss" | "expiresOn" | "minimumDays" | "completedDays"> & { dailyLoss: string; expiresOn: string; minimumDays: string; completedDays: string };
-const toDraft = (c: PropChallengeInput): Draft => ({ accountId: c.accountId, name: c.name, structure: c.structure, phase: c.phase, startingBalance: c.startingBalance, profitTarget: c.profitTarget, maximumLoss: c.maximumLoss, startDate: c.startDate, status: c.status, notes: c.notes, dailyLoss: c.dailyLoss ?? "", expiresOn: c.expiresOn ?? "", minimumDays: String(c.minimumDays), completedDays: String(c.completedDays) });
+import { CHALLENGE_STATUS, EditorDialog, Field, MoneyIn, Pill, STRUCTURES, Sel, TextArea, TextIn, statusTone, today, usePropMutations } from "./shared";
+import { challengeInput, thresholdAmount, toChallengeDraft, validateChallengeDraft, type ChallengeDraft as Draft } from "./challenge-draft";
 
 export function Challenges({ p }: { p: Portfolio }) {
   const { save } = usePropMutations();
-  const [editing, setEditing] = useState<{ id: string | null; draft: Draft; locked?: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ id: string | null; draft: Draft; original: PropChallengeInput; locked?: boolean } | null>(null);
   const acc = (id: string) => p.accounts.find((a) => a.id === id);
   const firm = (id?: string) => p.firms.find((f) => f.id === id)?.name ?? "";
   const startNew = (from?: PropChallenge) => {
@@ -20,14 +18,14 @@ export function Challenges({ p }: { p: Portfolio }) {
     const base: PropChallengeInput = from
       ? { ...from, phase: "", startingBalance: a ? accountSnapshot(p, a.id).balance : from.startingBalance, completedDays: 0, startDate: today(), expiresOn: null, status: "active", notes: "" }
       : { accountId: a?.id ?? "", name: "", structure: "two_step", phase: "Phase 1", startingBalance: a?.startingBalance ?? "", profitTarget: "", maximumLoss: "", dailyLoss: null, minimumDays: 0, completedDays: 0, startDate: today(), expiresOn: null, status: "active", notes: "" };
-    setEditing({ id: null, draft: toDraft(base) });
+    setEditing({ id: null, draft: toChallengeDraft(base), original: base });
   };
   const groups = [...new Set(p.challenges.map((c) => `${c.accountId}|${c.name}`))];
 
   return (
     <Panel title="Challenge tracker" meta="each phase is its own record; history is kept" bodyClass="space-y-3"
       actions={<Button size="sm" disabled={!p.accounts.length} onClick={() => startNew()} data-testid="button-add-challenge"><Plus className="h-3.5 w-3.5 mr-1" />New challenge</Button>}>
-      <p className="text-[12px] text-muted-foreground">Targets are amounts. Trading days are entered manually. Pass or fail is the status you record; reaching a target never marks a phase passed automatically.</p>
+      <p className="text-[12px] text-muted-foreground">Enter targets and loss limits as percentages of the phase's starting balance. Their monetary equivalents are used for progress. Trading days and pass/fail status are entered manually; reaching a target never marks a phase passed automatically.</p>
       {!p.challenges.length ? <Empty icon={<Flag className="h-4 w-4" />} title="No challenges" body={p.accounts.length ? "Record an evaluation phase to track its target, loss limits and days." : "Add a prop account first."} /> : groups.map((g) => {
         const list = p.challenges.filter((c) => `${c.accountId}|${c.name}` === g).sort((a, b) => a.startDate.localeCompare(b.startDate));
         const a = acc(list[0].accountId);
@@ -55,7 +53,7 @@ export function Challenges({ p }: { p: Portfolio }) {
                         <div><span className="text-muted-foreground">Days </span><span className="num">{c.completedDays}/{c.minimumDays}</span>{c.dailyLoss && <span className="text-muted-foreground"> · daily {money(c.dailyLoss, cur)}</span>}</div>
                       </div>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => setEditing({ id: c.id, draft: toDraft(c), locked: c.completedAt !== null || ["passed", "failed", "expired"].includes(c.status) })} data-testid={`button-edit-challenge-${c.id}`}><Pencil className="h-3.5 w-3.5 mr-1" />Edit</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditing({ id: c.id, draft: toChallengeDraft(c), original: c, locked: c.completedAt !== null || ["passed", "failed", "expired"].includes(c.status) })} data-testid={`button-edit-challenge-${c.id}`}><Pencil className="h-3.5 w-3.5 mr-1" />Edit</Button>
                   </div>
                 );
               })}
@@ -66,20 +64,25 @@ export function Challenges({ p }: { p: Portfolio }) {
       {editing && (
         <EditorDialog key={editing.id ?? "new"} open onClose={() => setEditing(null)} initial={editing.draft} title={editing.id ? "Edit challenge phase" : "Record challenge phase"}
           description={editing.locked ? "This phase is completed. Its result, phase, starting balance and target are frozen; add a next phase instead of rewriting history." : "Use the same challenge name across phases to keep them grouped. Fees stay in Expenses; nothing is removed when a phase ends."}
-          validate={(d) => !d.accountId ? "Choose an account." : !d.name.trim() || !d.phase.trim() ? "Name and phase are required."
-            : !MONEY_RE.test(d.startingBalance) || !MONEY_RE.test(d.profitTarget) || !MONEY_RE.test(d.maximumLoss) ? "Starting balance, target and max loss must be plain decimals."
-            : d.dailyLoss && !UMONEY_RE.test(d.dailyLoss) ? "Daily loss must be a positive decimal or empty."
-            : !/^\d+$/.test(d.minimumDays) || !/^\d+$/.test(d.completedDays) ? "Days must be whole numbers." : null}
-          onSubmit={(d) => save("challenges", editing.id, { ...d, name: d.name.trim(), phase: d.phase.trim(), dailyLoss: nn(d.dailyLoss), expiresOn: nn(d.expiresOn), minimumDays: Number(d.minimumDays), completedDays: Number(d.completedDays) })}>
+          validate={(d) => validateChallengeDraft(d, editing.original)}
+          onSubmit={(d) => save("challenges", editing.id, challengeInput(d, editing.original))}>
           {(d, set) => <>
             <Field label="Account"><Sel value={d.accountId} disabled={!!editing.id} onChange={(v) => set("accountId", v)} options={p.accounts.map((a) => [a.id, `${a.name} · ${firm(a.firmId)}`])} testId="select-challenge-account" /></Field>
             <Field label="Challenge name"><TextIn value={d.name} onChange={(v) => set("name", v)} testId="input-challenge-name" placeholder="e.g. 100K Evaluation" /></Field>
             <Field label="Challenge type"><Sel value={d.structure} onChange={(v) => set("structure", v as Draft["structure"])} options={Object.entries(STRUCTURES)} testId="select-challenge-structure" /></Field>
             <Field label="Evaluation phase"><TextIn value={d.phase} disabled={editing.locked} onChange={(v) => set("phase", v)} testId="input-challenge-phase" /></Field>
             <Field label="Starting balance"><MoneyIn value={d.startingBalance} disabled={editing.locked} onChange={(v) => set("startingBalance", v)} testId="input-challenge-start" /></Field>
-            <Field label="Profit target (amount)"><MoneyIn value={d.profitTarget} disabled={editing.locked} onChange={(v) => set("profitTarget", v)} testId="input-challenge-target" /></Field>
-            <Field label="Maximum loss (amount)"><MoneyIn value={d.maximumLoss} onChange={(v) => set("maximumLoss", v)} testId="input-challenge-maxloss" /></Field>
-            <Field label="Daily loss limit (optional)"><MoneyIn value={d.dailyLoss} onChange={(v) => set("dailyLoss", v)} testId="input-challenge-dailyloss" placeholder="" /></Field>
+            {(["profitTarget", "maximumLoss", "dailyLoss"] as const).map((key) => {
+              let hint = "Percentage of the phase starting balance; enter 8 for 8%.";
+              try {
+                const amount = thresholdAmount(d, editing.original, key);
+                if (amount !== null && amount !== "") hint = `${money(amount, acc(d.accountId)?.currency ?? "USD")} · ${Number(d.startingBalance) > 0 ? "based on the phase starting balance" : "existing amount; percentage requires a positive starting balance"}`;
+              } catch { /* Keep the percentage explanation while inputs are incomplete. */ }
+              return <Field key={key} label={key === "profitTarget" ? "Profit target (%)" : key === "maximumLoss" ? "Maximum loss (%)" : "Daily loss limit (%) (optional)"} hint={hint}>
+                <TextIn value={d[key]} inputMode="decimal" disabled={key === "profitTarget" && editing.locked} onChange={(v) => set(key, v)}
+                  testId={key === "profitTarget" ? "input-challenge-target" : key === "maximumLoss" ? "input-challenge-maxloss" : "input-challenge-dailyloss"} placeholder={key === "dailyLoss" ? "" : "e.g. 8"} />
+              </Field>;
+            })}
             <Field label="Minimum trading days"><TextIn value={d.minimumDays} inputMode="numeric" onChange={(v) => set("minimumDays", v)} testId="input-challenge-mindays" /></Field>
             <Field label="Days completed (confirmed)"><TextIn value={d.completedDays} inputMode="numeric" onChange={(v) => set("completedDays", v)} testId="input-challenge-days" /></Field>
             <Field label="Start date"><TextIn type="date" value={d.startDate} onChange={(v) => set("startDate", v)} testId="input-challenge-startdate" /></Field>

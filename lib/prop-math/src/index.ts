@@ -43,6 +43,23 @@ export function evaluateRule(p: Portfolio, rule: Portfolio["rules"][number], tod
   };
 }
 
+/** Percentages shown by challenge editors; null means the base is undefined. */
+export function challengePercentage(amount: string, startingBalance: string): string | null {
+  if (!/^-?\d+(\.\d+)?$/.test(amount) || !/^-?\d+(\.\d+)?$/.test(startingBalance)) return null;
+  const base = new D(startingBalance);
+  if (base.lte(0)) return null;
+  return new D(amount).div(base).times(100).toSignificantDigits(12).toFixed();
+}
+
+/** Persist the existing amount contract, rounded to its eight-decimal precision. */
+export function challengeAmount(percentage: string, startingBalance: string): string {
+  if (!/^\d{1,28}(\.\d{1,36})?$/.test(percentage) || !/^\d{1,16}(\.\d{1,8})?$/.test(startingBalance)
+    || new D(startingBalance).lte(0)) {
+    throw new Error("Use a non-negative percentage and a positive starting balance.");
+  }
+  return new D(startingBalance).times(percentage).div(100).toDecimalPlaces(8, Decimal.ROUND_HALF_UP).toFixed();
+}
+
 export function challengeProgress(p: Portfolio, c: Portfolio["challenges"][number]) {
   const s = accountSnapshot(p, c.accountId);
   const balance = c.closingBalance ?? s.balance;
