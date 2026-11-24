@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { RANGE_LABEL, useFilters, type Range } from "@/lib/filters";
 
 export function FilterBar({ hideRange }: { hideRange?: boolean }) {
-  const { filters, set, reset, activeAccounts, strategies, mixedCurrency } = useFilters();
+  const { filters, set, reset, currencies, currency, strategies, mixedCurrency } = useFilters();
   const [sym, setSym] = useState(filters.symbol);
   useEffect(() => setSym(filters.symbol), [filters.symbol]);
   useEffect(() => {
@@ -14,20 +14,13 @@ export function FilterBar({ hideRange }: { hideRange?: boolean }) {
     return () => clearTimeout(t);
   }, [sym, filters.symbol, set]);
 
-  const dirty = filters.range !== "all" || filters.symbol || filters.strategyId || filters.direction || (!mixedCurrency && filters.accountId);
+  const dirty = filters.range !== "all" || filters.symbol || filters.strategyId || filters.direction || filters.currency;
 
   return (
     <div className="flex flex-wrap items-center gap-2 pb-5 rise" data-testid="filter-bar">
-      <NSelect
-        value={filters.accountId}
-        onChange={(v) => set({ accountId: v })}
-        allowNone={!mixedCurrency}
-        noneLabel="All accounts"
-        placeholder="Account"
-        className="w-[190px]"
-        testId="select-account"
-        options={activeAccounts.map((a) => ({ value: a.id, label: `${a.name} · ${a.currency}` }))}
-      />
+      {mixedCurrency && <NSelect value={currency} onChange={(v) => set({ currency: v })}
+        placeholder="Trade currency" className="w-[130px]" testId="select-trade-currency-filter"
+        options={currencies.map(value => ({ value, label: value }))} />}
       {!hideRange && (
         <NSelect value={filters.range} onChange={(v) => set({ range: v as Range })} className="w-[130px]" testId="select-range"
           options={(Object.keys(RANGE_LABEL) as Range[]).map((k) => ({ value: k, label: RANGE_LABEL[k] }))} />
@@ -42,7 +35,7 @@ export function FilterBar({ hideRange }: { hideRange?: boolean }) {
           <X className="h-3.5 w-3.5 mr-1" /> Reset
         </Button>
       )}
-      {mixedCurrency && <span className="text-[11px] text-muted-foreground ml-1">Accounts use different currencies — results are scoped to one account.</span>}
+      {mixedCurrency && <span className="text-[11px] text-muted-foreground ml-1">Results include all trades in the selected currency. No currency conversion.</span>}
     </div>
   );
 }

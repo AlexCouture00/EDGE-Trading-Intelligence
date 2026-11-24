@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { Check, Lock } from "lucide-react";
 import {
-  useCreateTrade, useUpdateTrade, useListConfluences, useListStrategies, useListAccounts, getGetTradeQueryKey,
+  useCreateTrade, useUpdateTrade, useListConfluences, useListStrategies, getGetTradeQueryKey,
   type Trade, type TradeInput, type TradeInputStatus, type TradeInputAssetClass, type TradeInputDirection, type TradeInputGrade, type TradeInputPnlSource,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ASSET_CLASSES, errMsg, money, num } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTimezone } from "@/lib/time";
+import { useFilters } from "@/lib/filters";
 
 type F = Record<string, string>;
 const DEC = /^-?\d+(\.\d+)?$/;
@@ -36,7 +37,7 @@ function fromTrade(t?: Trade, timezone = "UTC"): F {
   for (const k of TEXT) f[k] = (t?.[k] as string | undefined) ?? "";
   for (const k of NUMS) f[k] = (t?.[k] as string | null | undefined) ?? "";
   for (const k of FEES) f[k] = (t?.[k] as string | undefined) ?? "";
-  f.accountId = t?.accountId ?? "";
+  f.currency = t?.currency ?? "";
   f.status = t?.status ?? "closed";
   f.assetClass = t?.assetClass ?? "";
   f.direction = t?.direction ?? "";
@@ -88,7 +89,7 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
   const [, nav] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const accounts = useListAccounts();
+  const { currency } = useFilters();
   const strategies = useListStrategies();
   const confluences = useListConfluences();
   const create = useCreateTrade();
@@ -96,10 +97,7 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
 
   const [f, setF] = useState<F>(() => {
     const base = fromTrade(initial, timezone);
-    if (!initial) {
-      const first = (accounts.data ?? []).find((a) => !a.archived);
-      if (first) base.accountId = first.id;
-    }
+    if (!initial) base.currency = currency;
     return base;
   });
   const previousTimezone = useRef(timezone);
@@ -119,14 +117,8 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
   const [errors, setErrors] = useState<F>({});
   const set = (k: string, v: string) => { setF((p) => ({ ...p, [k]: v })); if (errors[k]) setErrors((e) => ({ ...e, [k]: "" })); };
 
-  if (!initial && !f.accountId && accounts.data?.length) {
-    const first = accounts.data.find((a) => !a.archived);
-    if (first) setF((p) => ({ ...p, accountId: first.id }));
-  }
-
   const riskLocked = !!initial && initial.status !== "draft";
-  const account = accounts.data?.find((a) => a.id === f.accountId);
-  const cur = account?.currency ?? "USD";
+  const cur = f.currency;
 
   const preview = useMemo(() => {
     const fees = FEES.reduce((s, k) => s + (num(f[k]) ?? 0), 0);
@@ -143,7 +135,7 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
 
   function validate(status: string): F {
     const e: F = {};
-    if (!f.accountId) e.accountId = "Choose an account";
+    if (!/^[A-Z]{3}$/.test(f.currency)) e.currency = "Enter a 3-letter trade currency";
     for (const k of [...NUMS, ...FEES]) if (f[k] && !DEC.test(f[k])) e[k] = "Number only";
     if (f.chartUrl && !/^https:\/\//.test(f.chartUrl)) e.chartUrl = "Must be a valid HTTPS URL";
     if (status !== "draft") {
@@ -166,7 +158,7 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
 
   function build(status: TradeInputStatus): TradeInput {
     const iso = (v: string) => (v ? fromZonedTime(v, timezone).toISOString() : null);
-    const d: TradeInput = { accountId: f.accountId, status };
+    const d: TradeInput = { currency: f.currency, status };
     for (const k of TEXT) (d as unknown as Record<string, string>)[k] = k === "symbol" ? f.symbol.trim().toUpperCase() : f[k].trim();
     for (const k of NUMS) (d as unknown as Record<string, string | null>)[k] = f[k] ? f[k] : null;
     for (const k of FEES) (d as unknown as Record<string, string>)[k] = f[k] || "0";
@@ -250,9 +242,9 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
 
         <Sec id="basics" n={1} title="Instrument" desc="What and where">
           <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-            <Field label="Account" className="col-span-2" error={errors.accountId}>
-              <NSelect value={f.accountId} onChange={(v) => set("accountId", v)} className={inp} testId="select-trade-account" placeholder="Account"
-                options={(accounts.data ?? []).filter((a) => !a.archived || a.id === f.accountId).map((a) => ({ value: a.id, label: `${a.name} · ${a.currency}` }))} />
+            <Field label="Trade currency" className="col-span-2" error={errors.currency} hint="Denomination only — no account balance required.">
+              <Input value={f.currency} maxLength={3} disabled={riskLocked} onChange={(e) => set("currency", e.target.value.toUpperCase())}
+                className={cn(inp, "num uppercase")} placeholder="USD" data-testid="input-trade-currency" />
             </Field>
             <Field label="Strategy" className="col-span-2">
               <NSelect value={f.strategyId} onChange={(v) => set("strategyId", v)} allowNone noneLabel="No strategy" className={inp} testId="select-trade-strategy"

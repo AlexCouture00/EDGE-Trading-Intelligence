@@ -15,7 +15,7 @@ export default function Performance() {
 
   return (
     <div>
-      <PageHeader eyebrow={demo ? "Demo workspace · Performance" : "Performance"} title="Realized performance" sub={<>Balance curve, R curve and breakdowns for {scopeLabel}. Curves use realized balance — closed trades and cash flows — never live mark-to-market.</>} />
+      <PageHeader eyebrow={demo ? "Demo workspace · Performance" : "Performance"} title="Realized performance" sub={<>Trading P&amp;L, R curve and breakdowns for {scopeLabel}. Closed trade results only — no account balances, deposits or withdrawals.</>} />
       <FilterBar />
       {q.isLoading ? <LoadingBlock rows={10} /> : q.error ? <ErrorBlock error={q.error} retry={() => q.refetch()} /> : !a || a.metrics.totalTrades === 0 ? (
         <Panel><Empty title="No closed trades in scope" body="Performance breakdowns appear once trades are closed within the current filters." /></Panel>
@@ -33,7 +33,7 @@ export default function Performance() {
           </StatStrip>
           {a.warnings.map((w, i) => <Caution key={i}>{w}</Caution>)}
           <div className="grid gap-4 xl:grid-cols-2">
-            <Panel title="Realized balance" meta="Not mark-to-market"><EquityChart data={a.equity} currency={cur} height={240} /></Panel>
+            <Panel title="Cumulative trading P&L" meta="Starts at zero for the selected trades"><EquityChart data={a.equity} currency={cur} height={240} /></Panel>
             <Panel title="Cumulative R" meta={`${a.metrics.rSample} of ${a.metrics.totalTrades} trades have initial risk`}><RChart data={a.equity} height={240} /></Panel>
           </div>
           <Panel title="Monthly" meta="By exit month">

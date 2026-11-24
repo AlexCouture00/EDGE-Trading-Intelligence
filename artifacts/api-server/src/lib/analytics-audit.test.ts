@@ -188,21 +188,22 @@ test("PostgreSQL analytics audit: confluences, currencies, cash flows, edit/dele
         for (const strategy of created) await db.delete(strategies).where(eq(strategies.id, strategy.id));
       }
     });
-    await t.test("cash flows affect balance only; curve drawdown agrees with metrics", async () => {
+    await t.test("journal curves exclude capital and cash flows; selected-period P&L starts at zero", async () => {
       const all = await get();
-      assert.equal(all.equity.at(-1)!.balance, 1400);
+      assert.equal(all.equity.at(-1)!.balance, 100);
       assert.equal(all.equity.at(-1)!.pnl, 100);
       assert.equal(all.equity.at(-1)!.cumulativeR, 1);
       assert.equal(all.equity.at(-1)!.drawdown, 100);
       assert.equal(all.metrics.maxDrawdown, "100.00000000");
       const period = await get({ from: "2026-01-03T00:00:00Z", to: "2026-01-04T23:59:59Z" });
-      assert.equal(period.equity[0]!.balance, 1700);
-      assert.equal(period.equity.at(-1)!.balance, 1600);
+      assert.equal(period.equity[0]!.balance, 0);
+      assert.equal(period.equity.at(-1)!.balance, -100);
       assert.equal(period.metrics.netPnl, "-100.00000000");
       const untagged = await get({ confluenceIds: "", matchMode: "exact" });
       assert.equal(untagged.metrics.totalTrades, 1);
-      assert.equal(untagged.equity.at(-1)!.balance, 1000);
-      assert.ok(untagged.warnings.some((w) => w.includes("attribution")));
+      assert.equal(untagged.equity.at(-1)!.balance, 0);
+      assert.equal(all.metrics.maxDrawdownPercent, null);
+      assert.ok(untagged.warnings.some((w) => w.includes("trading P&L")));
     });
     await t.test("date filters preserve millisecond boundaries and reject invalid/reversed dates", async () => {
       const afterExit = await get({ from: "2026-01-01T15:00:00.001Z" });
@@ -227,12 +228,14 @@ test("PostgreSQL analytics audit: confluences, currencies, cash flows, edit/dele
       const removed = await get();
       assert.equal(removed.metrics.totalTrades, 2);
       assert.equal(removed.metrics.netPnl, "-100.00000000");
-      assert.equal(removed.equity.at(-1)!.balance, 1200);
+      assert.equal(removed.equity.at(-1)!.balance, -100);
     });
-    await t.test("cross-currency totals require an explicit account instead of summing currencies", async () => {
+    await t.test("cross-currency totals require a currency or legacy account scope, never assumed FX", async () => {
       await db.insert(accounts).values({ ownerId: owner, name: "Audit EUR", currency: "EUR", initialBalance: "1000", type: "backtesting" });
       assert.equal((await fetch(`http://127.0.0.1:${port}/analytics`)).status, 400);
       assert.equal((await get({ accountId: account!.id })).currency, "USD");
+      assert.equal((await get({ currency: "USD" })).metrics.netPnl, "-100.00000000");
+      assert.equal((await get({ currency: "EUR" })).metrics.totalTrades, 0);
     });
   } finally {
     await new Promise<void>((resolve, reject) => server.close((err) => err ? reject(err) : resolve()));

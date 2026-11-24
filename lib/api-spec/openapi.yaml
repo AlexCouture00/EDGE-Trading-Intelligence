@@ -281,6 +281,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Demo"
         - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/TradeCurrency"
         - $ref: "#/components/parameters/From"
         - $ref: "#/components/parameters/To"
         - $ref: "#/components/parameters/Symbol"
@@ -346,6 +347,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Demo"
         - $ref: "#/components/parameters/AccountId"
+        - $ref: "#/components/parameters/TradeCurrency"
         - $ref: "#/components/parameters/From"
         - $ref: "#/components/parameters/To"
         - $ref: "#/components/parameters/Symbol"
@@ -399,6 +401,7 @@ components:
     Demo: { name: demo, in: query, schema: { type: boolean }, description: Read-only isolated example dataset }
     Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     AccountId: { name: accountId, in: query, schema: { type: string } }
+    TradeCurrency: { name: currency, in: query, description: Report all journal trades denominated in this currency without combining currencies., schema: { type: string, pattern: "^[A-Z]{3}$" } }
     From: { name: from, in: query, schema: { type: string, format: date-time } }
     To: { name: to, in: query, schema: { type: string, format: date-time } }
     Symbol: { name: symbol, in: query, schema: { type: string } }
@@ -685,9 +688,10 @@ components:
         fee: { type: string }
     TradeInput:
       type: object
-      required: [accountId, status]
+      required: [status]
       properties:
-        accountId: { type: string, format: uuid }
+        accountId: { type: string, format: uuid, description: Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades. }
+        currency: { type: string, pattern: "^[A-Z]{3}$", description: Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency. }
         status: { type: string, enum: [draft, open, closed] }
         symbol: { type: string, maxLength: 30 }
         assetClass: { type: string, enum: [forex, metals, indices, crypto, futures, stocks] }
@@ -730,9 +734,10 @@ components:
       allOf:
         - $ref: "#/components/schemas/TradeInput"
         - type: object
-          required: [id, accountName, currency, netPnl, realizedR, confluences, createdAt, updatedAt]
+          required: [id, accountId, accountName, currency, netPnl, realizedR, confluences, createdAt, updatedAt]
           properties:
             id: { type: string }
+            accountId: { type: string, format: uuid }
             accountName: { type: string }
             currency: { type: string }
             strategyName: { type: ["string", "null"] }

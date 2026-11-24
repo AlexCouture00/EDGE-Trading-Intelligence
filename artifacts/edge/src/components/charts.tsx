@@ -44,7 +44,7 @@ export function EquityChart({ data, currency, height = 260 }: { data: EquityPoin
         <XAxis dataKey="date" {...axis} tickFormatter={(s: string) => tick(s, timezone)} minTickGap={40} />
         <YAxis {...axis} width={64} domain={["auto", "auto"]} tickFormatter={(v: number) => money(v, currency, { compact: true })} />
         <Tooltip content={<Tip fmt={(v) => money(v, currency)} />} cursor={{ stroke: "hsl(220 5% 30%)" }} />
-        <Area type="monotone" dataKey="balance" name="Realized balance" stroke="hsl(40 12% 90%)" strokeWidth={1.5} fill="url(#eq)" dot={false} isAnimationActive />
+        <Area type="monotone" dataKey="pnl" name="Cumulative trading P&L" stroke="hsl(40 12% 90%)" strokeWidth={1.5} fill="url(#eq)" dot={false} isAnimationActive />
       </AreaChart>
     </ResponsiveContainer>
   );

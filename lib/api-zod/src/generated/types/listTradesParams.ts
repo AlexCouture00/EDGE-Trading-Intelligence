@@ -12,6 +12,7 @@ import type { FromParameter } from './fromParameter';
 import type { StrategyIdParameter } from './strategyIdParameter';
 import type { SymbolParameter } from './symbolParameter';
 import type { ToParameter } from './toParameter';
+import type { TradeCurrencyParameter } from './tradeCurrencyParameter';
 
 export type ListTradesParams = {
 /**
@@ -19,6 +20,11 @@ export type ListTradesParams = {
  */
 demo?: DemoParameter;
 accountId?: AccountIdParameter;
+/**
+ * Report all journal trades denominated in this currency without combining currencies.
+ * @pattern ^[A-Z]{3}$
+ */
+currency?: TradeCurrencyParameter;
 from?: FromParameter;
 to?: ToParameter;
 symbol?: SymbolParameter;

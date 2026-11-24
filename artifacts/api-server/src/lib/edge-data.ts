@@ -86,6 +86,7 @@ export function filterTrades<T extends LoadedTrade>(rows: T[], query: Record<str
   return rows.filter((t) => {
     const date = new Date(t.status === "closed" ? t.exitAt! : t.entryAt ?? t.createdAt).getTime();
     return (!query.accountId || t.accountId === query.accountId)
+      && (!query.currency || t.currency === query.currency)
       && (!query.symbol || t.symbol.toUpperCase() === String(query.symbol).toUpperCase())
       && (!query.strategyId || t.strategyId === query.strategyId)
       && (!query.direction || t.direction === query.direction)

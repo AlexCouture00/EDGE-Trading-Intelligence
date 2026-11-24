@@ -19,7 +19,7 @@ function cell(v: unknown): string {
 
 function exportCsv(trades: Trade[], scope: string) {
   const cols: [string, (t: Trade) => unknown][] = [
-    ["id", (t) => t.id], ["status", (t) => t.status], ["account", (t) => t.accountName], ["currency", (t) => t.currency], ["symbol", (t) => t.symbol], ["assetClass", (t) => t.assetClass],
+    ["id", (t) => t.id], ["status", (t) => t.status], ["currency", (t) => t.currency], ["symbol", (t) => t.symbol], ["assetClass", (t) => t.assetClass],
     ["direction", (t) => t.direction], ["strategy", (t) => t.strategyName], ["entryAtUtc", (t) => t.entryAt], ["exitAtUtc", (t) => t.exitAt], ["entryPrice", (t) => t.entryPrice], ["exitPrice", (t) => t.exitPrice],
     ["stopLoss", (t) => t.stopLoss], ["takeProfit", (t) => t.takeProfit], ["quantity", (t) => t.quantity], ["initialRisk", (t) => t.initialRisk], ["grossPnl", (t) => t.grossPnl], ["commission", (t) => t.commission],
     ["funding", (t) => t.funding], ["slippage", (t) => t.slippage], ["netPnl", (t) => t.netPnl], ["realizedR", (t) => t.realizedR], ["confluences", (t) => t.confluences.map((c) => c.name)],

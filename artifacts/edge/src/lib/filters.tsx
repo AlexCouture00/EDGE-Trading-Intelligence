@@ -4,9 +4,9 @@ import { useListAccounts, useListStrategies, type Account, type Strategy, type G
 import { useMode } from "./mode";
 
 export type Range = "all" | "30d" | "90d" | "ytd" | "12m";
-export type Filters = { accountId: string; range: Range; symbol: string; strategyId: string; direction: "" | "long" | "short" };
+export type Filters = { currency: string; range: Range; symbol: string; strategyId: string; direction: "" | "long" | "short" };
 
-const initial: Filters = { accountId: "", range: "all", symbol: "", strategyId: "", direction: "" };
+const initial: Filters = { currency: "", range: "all", symbol: "", strategyId: "", direction: "" };
 
 type Ctx = {
   filters: Filters;
@@ -19,6 +19,7 @@ type Ctx = {
   accountsError: unknown;
   refetchAccounts: () => void;
   mixedCurrency: boolean;
+  currencies: string[];
   currency: string;
   scopeLabel: string;
   analyticsParams: GetAnalyticsParams;
@@ -51,20 +52,14 @@ export function FiltersProvider({ children }: { children: ReactNode }) {
   const currencies = Array.from(new Set(accounts.map((a) => a.currency)));
   const mixedCurrency = currencies.length > 1;
 
-  useEffect(() => {
-    if (mixedCurrency && !filters.accountId && activeAccounts[0]) {
-      setFilters((f) => ({ ...f, accountId: activeAccounts[0].id }));
-    }
-  }, [mixedCurrency, filters.accountId, activeAccounts]);
-
-  const selected = accounts.find((a) => a.id === filters.accountId);
-  const currency = selected?.currency ?? currencies[0] ?? "USD";
+  const currency = currencies.includes(filters.currency) ? filters.currency
+    : currencies.includes("USD") ? "USD" : currencies[0] ?? "USD";
 
   const value = useMemo<Ctx>(() => {
     const from = rangeFrom(filters.range);
     const base = {
       ...(dp ?? {}),
-      ...(filters.accountId ? { accountId: filters.accountId } : {}),
+      currency,
       ...(from ? { from } : {}),
       ...(filters.symbol ? { symbol: filters.symbol.toUpperCase() } : {}),
       ...(filters.strategyId ? { strategyId: filters.strategyId } : {}),
@@ -73,7 +68,7 @@ export function FiltersProvider({ children }: { children: ReactNode }) {
     return {
       filters,
       set: (p) => setFilters((f) => ({ ...f, ...p })),
-      reset: () => setFilters(mixedCurrency && activeAccounts[0] ? { ...initial, accountId: activeAccounts[0].id } : initial),
+      reset: () => setFilters(initial),
       accounts,
       activeAccounts,
       strategies: strat.data ?? [],
@@ -81,13 +76,14 @@ export function FiltersProvider({ children }: { children: ReactNode }) {
       accountsError: acc.error,
       refetchAccounts: () => { void acc.refetch(); },
       mixedCurrency,
+      currencies,
       currency,
-      scopeLabel: selected ? `${selected.name} · ${selected.currency}` : `All accounts · ${currency}`,
+      scopeLabel: `All trades · ${currency}`,
       analyticsParams: base,
       tradeParams: base,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, dp, acc.data, acc.isLoading, acc.error, strat.data, mixedCurrency, currency, selected]);
+  }, [filters, dp, acc.data, acc.isLoading, acc.error, strat.data, mixedCurrency, currency]);
 
   return <C.Provider value={value}>{children}</C.Provider>;
 }

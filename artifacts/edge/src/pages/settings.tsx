@@ -21,7 +21,7 @@ import { useDateFormatter, useTimezone } from "@/lib/time";
 import { fromZonedTime } from "date-fns-tz";
 import { cn } from "@/lib/utils";
 
-const TABS = [{ id: "accounts", label: "Accounts" }, { id: "confluences", label: "Confluences" }, { id: "preferences", label: "Preferences" }];
+const TABS = [{ id: "confluences", label: "Confluences" }, { id: "preferences", label: "Preferences" }];
 const DEC = /^\d+(\.\d{1,8})?$/;
 
 function useSave() {
@@ -236,7 +236,7 @@ function Preferences() {
   const [f, setF] = useState({ timezone: "", riskLimitPercent: "" });
   useEffect(() => { if (q.data) setF({ timezone: q.data.timezone, riskLimitPercent: q.data.riskLimitPercent }); }, [q.data]);
   const zones = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.("timeZone") ?? ["UTC", "Europe/London", "America/New_York", "Asia/Tokyo"];
-  const valid = f.timezone && /^\d+(\.\d{1,4})?$/.test(f.riskLimitPercent);
+  const valid = f.timezone && q.data;
   return (
     <Panel title="Preferences">
       {q.isLoading ? <LoadingBlock rows={2} /> : q.error ? <ErrorBlock error={q.error} retry={() => q.refetch()} /> : (
@@ -246,11 +246,6 @@ function Preferences() {
             <Input list="tz" value={f.timezone} disabled={!canWrite} onChange={(e) => setF({ ...f, timezone: e.target.value })} data-testid="input-timezone" />
             <datalist id="tz">{zones.map((z) => <option key={z} value={z} />)}</datalist>
             <p className="text-[11px] text-muted-foreground">Times are stored in UTC. Browser timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Max risk per trade (% of balance)</Label>
-            <Input value={f.riskLimitPercent} disabled={!canWrite} inputMode="decimal" onChange={(e) => setF({ ...f, riskLimitPercent: e.target.value.replace(/[^\d.]/g, "") })} className="num" data-testid="input-risk-limit" />
-            <p className="text-[11px] text-muted-foreground">Used to flag trades on the Risk page. It never blocks logging.</p>
           </div>
           <div className="sm:col-span-2">
             {canWrite ? <Button disabled={!valid || upd.isPending} onClick={() => upd.mutate({ data: f }, { onSuccess: s.ok("Preferences saved"), onError: s.fail })} data-testid="button-save-settings">Save preferences</Button> : <WriteGate />}
@@ -263,10 +258,13 @@ function Preferences() {
 
 export default function SettingsPage() {
   const { demo } = useMode();
-  const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get("tab") ?? "accounts");
+  const [tab, setTab] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    return TABS.some(t => t.id === requested) ? requested! : "confluences";
+  });
   return (
     <div>
-      <PageHeader eyebrow={demo ? "Demo workspace · Settings" : "Settings"} title="Workspace" sub="Accounts, cash flows, the confluence vocabulary and reporting preferences." />
+      <PageHeader eyebrow={demo ? "Demo workspace · Settings" : "Settings"} title="Workspace" sub="Your confluence vocabulary and reporting preferences. Account balances are managed separately in Prop Firm Manager." />
       <div className="flex gap-1 border-b border-border mb-5">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} className={cn("relative px-3 h-9 text-[13px] transition-colors", tab === t.id ? "text-foreground" : "text-muted-foreground hover:text-foreground")} data-testid={`tab-${t.id}`}>
@@ -274,7 +272,6 @@ export default function SettingsPage() {
           </button>
         ))}
       </div>
-      {tab === "accounts" && <Accounts />}
       {tab === "confluences" && <ConfluenceManager />}
       {tab === "preferences" && <Preferences />}
     </div>

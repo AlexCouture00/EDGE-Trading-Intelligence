@@ -13,7 +13,13 @@ import type { TradeInputPnlSource } from './tradeInputPnlSource';
 import type { TradeInputStatus } from './tradeInputStatus';
 
 export interface TradeInput {
-  accountId: string;
+  /** Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades. */
+  accountId?: string;
+  /**
+     * Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.
+     * @pattern ^[A-Z]{3}$
+     */
+  currency?: string;
   status: TradeInputStatus;
   /** @maxLength 30 */
   symbol?: string;

@@ -263,7 +263,7 @@ Procedure used for the approved Supabase activation:
 ### Financial and historical semantics
 
 - Nominal allocations are not personal assets, withdrawable balances or net
-  worth. Personal live journal balances are displayed separately.
+  worth. The journal shows trade-only performance, not account balances.
 - Reports operate on one selected currency, without assumed FX conversion.
   Date filters apply to cash flows, not historical reconstructions of allocation.
 - Net cash profit is **net payouts actually received minus recorded expenses**,
@@ -300,4 +300,25 @@ Procedure used for the approved Supabase activation:
 `validate:migrations` uses an isolated disposable local PostgreSQL database to
 check fresh initialization, reapplication safety, the additive prop-manager
 upgrade preserving an existing account, RLS, and the API/financial test suite.
+
+### Trade-only journal
+
+Workspace settings contain confluences and reporting preferences, not account or
+cash-flow management. Logging a trade requires no account setup or starting
+balance. A currency identifies the trade's denomination; reports include every
+matching trade, including trades linked to archived historical accounts, without
+combining currencies or assuming FX conversion.
+
+Existing account records, cash flows and trade relationships are retained.
+Creating a trade without an explicit legacy account ID automatically resolves an
+owner-scoped internal record, creating one with zero starting capital if needed.
+It does not choose an arbitrary legacy or prop-linked account for a new trade.
+Entered-trade edits retain the original link and currency. A draft may change
+currency. There is no schema migration, account deletion or historical rewrite.
+
+Journal P&L curves start at zero for the selected trade scope and exclude initial
+capital, deposits and withdrawals. Drawdown is measured against the running
+trading P&L peak, not account balances; balance-relative risk and drawdown
+percentages are not displayed. Prop Firm Manager remains the balance-tracking
+module and keeps its separate accounting rules.
 Never point this validator at Supabase.

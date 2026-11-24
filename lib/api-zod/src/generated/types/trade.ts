@@ -10,6 +10,7 @@ import type { TradeInput } from './tradeInput';
 
 export type Trade = TradeInput & ({
   id: string;
+  accountId: string;
   accountName: string;
   currency: string;
   /** @nullable */

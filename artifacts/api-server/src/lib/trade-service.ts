@@ -1,5 +1,5 @@
 import { db, trades, accounts, strategies, confluences, executions, tradeConfluences } from "@workspace/db";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { CreateTradeBody } from "@workspace/api-zod";
 import { D, money, netResult, realizedR, linearPnl } from "./calculations";
@@ -18,9 +18,31 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
   return db.transaction(async (tx) => {
     const [existing] = id ? await tx.select().from(trades).where(and(eq(trades.id, id), eq(trades.ownerId, ownerId))).for("update") : [];
     if (id && !existing) throw new HttpError(404, "Trade not found.");
-    const data = { ...input };
-    const [account] = await tx.select().from(accounts).where(and(eq(accounts.id, data.accountId), eq(accounts.ownerId, ownerId)));
+    let accountId: string | undefined = input.accountId ?? existing?.accountId;
+    let account: typeof accounts.$inferSelect | undefined;
+    if (accountId) [account] = await tx.select().from(accounts).where(and(eq(accounts.id, accountId), eq(accounts.ownerId, ownerId)));
+    if (accountId && !account) throw new HttpError(404, "Trading account not found.");
+    // A draft can change denomination; entered trades retain their original link.
+    if (!input.accountId && existing?.status === "draft" && input.currency && input.currency !== account?.currency) {
+      accountId = undefined;
+      account = undefined;
+    }
+    if (!accountId) {
+      const currency = input.currency ?? "USD";
+      // Serialize first-trade creation per owner without schema changes or duplicate buckets.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${ownerId}, 0))`);
+      [account] = await tx.select().from(accounts).where(and(
+        eq(accounts.ownerId, ownerId), eq(accounts.currency, currency), eq(accounts.archived, false),
+        eq(accounts.broker, "edge-internal-journal"), eq(accounts.initialBalance, "0"),
+      )).orderBy(asc(accounts.createdAt), asc(accounts.id)).limit(1);
+      if (!account) [account] = await tx.insert(accounts).values({
+        ownerId, name: "Journal", broker: "edge-internal-journal", currency, initialBalance: "0", type: "backtesting",
+      }).returning();
+      accountId = account!.id;
+    }
+    const data = { ...input, accountId };
     if (!account) throw new HttpError(404, "Trading account not found.");
+    if (input.currency && input.currency !== account.currency) throw new HttpError(400, "An entered trade's currency cannot be changed.");
     if (account.archived && (!existing || existing.accountId !== account.id)) throw new HttpError(400, "Choose an active account.");
     if (existing && existing.status !== "draft") {
       if (data.accountId !== existing.accountId) throw new HttpError(400, "The account of an entered trade cannot be changed.");
@@ -109,7 +131,7 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
     const r = netPnl !== null ? realizedR(netPnl, data.initialRisk) : null;
     if (netPnl !== null) validateDecimal(netPnl, "Net P&L");
     if (r !== null) validateDecimal(r, "Realized R");
-    const { confluenceIds: _ids, executions: _fills, ...fields } = data;
+    const { confluenceIds: _ids, executions: _fills, currency: _currency, ...fields } = data;
     const values = {
       ...fields,
       symbol: (data.symbol ?? "").trim().toUpperCase(),

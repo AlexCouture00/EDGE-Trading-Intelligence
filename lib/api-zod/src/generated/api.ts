@@ -1029,9 +1029,13 @@ export const UpdateStrategyResponse = zod.object({
 }))
 
 
+export const listTradesQueryCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+
+
 export const ListTradesQueryParams = zod.object({
   "demo": zod.coerce.boolean().optional().describe('Read-only isolated example dataset'),
   "accountId": zod.coerce.string().optional(),
+  "currency": zod.coerce.string().regex(listTradesQueryCurrencyRegExp).optional().describe('Report all journal trades denominated in this currency without combining currencies.'),
   "from": zod.coerce.date().optional(),
   "to": zod.coerce.date().optional(),
   "symbol": zod.coerce.string().optional(),
@@ -1041,6 +1045,7 @@ export const ListTradesQueryParams = zod.object({
   "search": zod.coerce.string().optional()
 })
 
+export const listTradesResponseOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listTradesResponseOneSymbolMax = 30;
 
 export const listTradesResponseOneTimeframeMax = 50;
@@ -1089,7 +1094,8 @@ export const listTradesResponseTwoConfluencesItemOneSortOrderMin = 0;
 
 
 export const ListTradesResponseItem = zod.object({
-  "accountId": zod.string().uuid(),
+  "accountId": zod.string().uuid().describe('Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades.'),
+  "currency": zod.string().regex(listTradesResponseOneCurrencyRegExp).describe('Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.'),
   "status": zod.enum(['draft', 'open', 'closed']),
   "symbol": zod.string().max(listTradesResponseOneSymbolMax).optional(),
   "assetClass": zod.enum(['forex', 'metals', 'indices', 'crypto', 'futures', 'stocks']).optional(),
@@ -1136,6 +1142,7 @@ export const ListTradesResponseItem = zod.object({
 })).max(listTradesResponseOneExecutionsMax).optional()
 }).and(zod.object({
   "id": zod.string(),
+  "accountId": zod.string().uuid(),
   "accountName": zod.string(),
   "currency": zod.string(),
   "strategyName": zod.string().nullish(),
@@ -1158,6 +1165,7 @@ export const ListTradesResponseItem = zod.object({
 export const ListTradesResponse = zod.array(ListTradesResponseItem)
 
 
+export const createTradeBodyCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const createTradeBodySymbolMax = 30;
 
 export const createTradeBodyTimeframeMax = 50;
@@ -1197,7 +1205,8 @@ export const createTradeBodyExecutionsMax = 100;
 
 
 export const CreateTradeBody = zod.object({
-  "accountId": zod.string().uuid(),
+  "accountId": zod.string().uuid().optional().describe('Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades.'),
+  "currency": zod.string().regex(createTradeBodyCurrencyRegExp).optional().describe('Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.'),
   "status": zod.enum(['draft', 'open', 'closed']),
   "symbol": zod.string().max(createTradeBodySymbolMax).optional(),
   "assetClass": zod.enum(['forex', 'metals', 'indices', 'crypto', 'futures', 'stocks']).optional(),
@@ -1244,6 +1253,7 @@ export const CreateTradeBody = zod.object({
 })).max(createTradeBodyExecutionsMax).optional()
 })
 
+export const createTradeResponseOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const createTradeResponseOneSymbolMax = 30;
 
 export const createTradeResponseOneTimeframeMax = 50;
@@ -1292,7 +1302,8 @@ export const createTradeResponseTwoConfluencesItemOneSortOrderMin = 0;
 
 
 export const CreateTradeResponse = zod.object({
-  "accountId": zod.string().uuid(),
+  "accountId": zod.string().uuid().describe('Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades.'),
+  "currency": zod.string().regex(createTradeResponseOneCurrencyRegExp).describe('Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.'),
   "status": zod.enum(['draft', 'open', 'closed']),
   "symbol": zod.string().max(createTradeResponseOneSymbolMax).optional(),
   "assetClass": zod.enum(['forex', 'metals', 'indices', 'crypto', 'futures', 'stocks']).optional(),
@@ -1339,6 +1350,7 @@ export const CreateTradeResponse = zod.object({
 })).max(createTradeResponseOneExecutionsMax).optional()
 }).and(zod.object({
   "id": zod.string(),
+  "accountId": zod.string().uuid(),
   "accountName": zod.string(),
   "currency": zod.string(),
   "strategyName": zod.string().nullish(),
@@ -1368,6 +1380,7 @@ export const GetTradeQueryParams = zod.object({
   "demo": zod.coerce.boolean().optional().describe('Read-only isolated example dataset')
 })
 
+export const getTradeResponseOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getTradeResponseOneSymbolMax = 30;
 
 export const getTradeResponseOneTimeframeMax = 50;
@@ -1416,7 +1429,8 @@ export const getTradeResponseTwoConfluencesItemOneSortOrderMin = 0;
 
 
 export const GetTradeResponse = zod.object({
-  "accountId": zod.string().uuid(),
+  "accountId": zod.string().uuid().describe('Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades.'),
+  "currency": zod.string().regex(getTradeResponseOneCurrencyRegExp).describe('Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.'),
   "status": zod.enum(['draft', 'open', 'closed']),
   "symbol": zod.string().max(getTradeResponseOneSymbolMax).optional(),
   "assetClass": zod.enum(['forex', 'metals', 'indices', 'crypto', 'futures', 'stocks']).optional(),
@@ -1463,6 +1477,7 @@ export const GetTradeResponse = zod.object({
 })).max(getTradeResponseOneExecutionsMax).optional()
 }).and(zod.object({
   "id": zod.string(),
+  "accountId": zod.string().uuid(),
   "accountName": zod.string(),
   "currency": zod.string(),
   "strategyName": zod.string().nullish(),
@@ -1488,6 +1503,7 @@ export const UpdateTradeParams = zod.object({
   "id": zod.coerce.string().uuid()
 })
 
+export const updateTradeBodyCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const updateTradeBodySymbolMax = 30;
 
 export const updateTradeBodyTimeframeMax = 50;
@@ -1527,7 +1543,8 @@ export const updateTradeBodyExecutionsMax = 100;
 
 
 export const UpdateTradeBody = zod.object({
-  "accountId": zod.string().uuid(),
+  "accountId": zod.string().uuid().optional().describe('Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades.'),
+  "currency": zod.string().regex(updateTradeBodyCurrencyRegExp).optional().describe('Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.'),
   "status": zod.enum(['draft', 'open', 'closed']),
   "symbol": zod.string().max(updateTradeBodySymbolMax).optional(),
   "assetClass": zod.enum(['forex', 'metals', 'indices', 'crypto', 'futures', 'stocks']).optional(),
@@ -1574,6 +1591,7 @@ export const UpdateTradeBody = zod.object({
 })).max(updateTradeBodyExecutionsMax).optional()
 })
 
+export const updateTradeResponseOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const updateTradeResponseOneSymbolMax = 30;
 
 export const updateTradeResponseOneTimeframeMax = 50;
@@ -1622,7 +1640,8 @@ export const updateTradeResponseTwoConfluencesItemOneSortOrderMin = 0;
 
 
 export const UpdateTradeResponse = zod.object({
-  "accountId": zod.string().uuid(),
+  "accountId": zod.string().uuid().describe('Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades.'),
+  "currency": zod.string().regex(updateTradeResponseOneCurrencyRegExp).describe('Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.'),
   "status": zod.enum(['draft', 'open', 'closed']),
   "symbol": zod.string().max(updateTradeResponseOneSymbolMax).optional(),
   "assetClass": zod.enum(['forex', 'metals', 'indices', 'crypto', 'futures', 'stocks']).optional(),
@@ -1669,6 +1688,7 @@ export const UpdateTradeResponse = zod.object({
 })).max(updateTradeResponseOneExecutionsMax).optional()
 }).and(zod.object({
   "id": zod.string(),
+  "accountId": zod.string().uuid(),
   "accountName": zod.string(),
   "currency": zod.string(),
   "strategyName": zod.string().nullish(),
@@ -1697,6 +1717,7 @@ export const DeleteTradeParams = zod.object({
 export const DeleteTradeResponse = zod.void()
 
 
+export const getAnalyticsQueryCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getAnalyticsQueryMinSampleMax = 1000;
 
 
@@ -1704,6 +1725,7 @@ export const getAnalyticsQueryMinSampleMax = 1000;
 export const GetAnalyticsQueryParams = zod.object({
   "demo": zod.coerce.boolean().optional().describe('Read-only isolated example dataset'),
   "accountId": zod.coerce.string().optional(),
+  "currency": zod.coerce.string().regex(getAnalyticsQueryCurrencyRegExp).optional().describe('Report all journal trades denominated in this currency without combining currencies.'),
   "from": zod.coerce.date().optional(),
   "to": zod.coerce.date().optional(),
   "symbol": zod.coerce.string().optional(),
@@ -1714,6 +1736,7 @@ export const GetAnalyticsQueryParams = zod.object({
   "minSample": zod.coerce.number().int().min(1).max(getAnalyticsQueryMinSampleMax).optional()
 })
 
+export const getAnalyticsResponseRecentTradesItemOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getAnalyticsResponseRecentTradesItemOneSymbolMax = 30;
 
 export const getAnalyticsResponseRecentTradesItemOneTimeframeMax = 50;
@@ -2041,7 +2064,8 @@ export const GetAnalyticsResponse = zod.object({
   "sampleWarning": zod.boolean().optional()
 }))),
   "recentTrades": zod.array(zod.object({
-  "accountId": zod.string().uuid(),
+  "accountId": zod.string().uuid().describe('Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades.'),
+  "currency": zod.string().regex(getAnalyticsResponseRecentTradesItemOneCurrencyRegExp).describe('Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.'),
   "status": zod.enum(['draft', 'open', 'closed']),
   "symbol": zod.string().max(getAnalyticsResponseRecentTradesItemOneSymbolMax).optional(),
   "assetClass": zod.enum(['forex', 'metals', 'indices', 'crypto', 'futures', 'stocks']).optional(),
@@ -2088,6 +2112,7 @@ export const GetAnalyticsResponse = zod.object({
 })).max(getAnalyticsResponseRecentTradesItemOneExecutionsMax).optional()
 }).and(zod.object({
   "id": zod.string(),
+  "accountId": zod.string().uuid(),
   "accountName": zod.string(),
   "currency": zod.string(),
   "strategyName": zod.string().nullish(),

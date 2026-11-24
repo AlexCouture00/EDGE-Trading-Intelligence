@@ -13,6 +13,7 @@ import type { GetAnalyticsMatchMode } from './getAnalyticsMatchMode';
 import type { StrategyIdParameter } from './strategyIdParameter';
 import type { SymbolParameter } from './symbolParameter';
 import type { ToParameter } from './toParameter';
+import type { TradeCurrencyParameter } from './tradeCurrencyParameter';
 
 export type GetAnalyticsParams = {
 /**
@@ -20,6 +21,11 @@ export type GetAnalyticsParams = {
  */
 demo?: DemoParameter;
 accountId?: AccountIdParameter;
+/**
+ * Report all journal trades denominated in this currency without combining currencies.
+ * @pattern ^[A-Z]{3}$
+ */
+currency?: TradeCurrencyParameter;
 from?: FromParameter;
 to?: ToParameter;
 symbol?: SymbolParameter;

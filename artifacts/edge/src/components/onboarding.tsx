@@ -2,16 +2,13 @@ import { useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ArrowRight } from "lucide-react";
-import { useCreateAccount, useCreateStrategy, useListConfluences, useListStrategies, AccountInputType } from "@workspace/api-client-react";
+import { useCreateStrategy, useListConfluences, useListStrategies } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { NSelect } from "@/components/nselect";
 import { useToast } from "@/hooks/use-toast";
-import { useMode } from "@/lib/mode";
-import { useFilters } from "@/lib/filters";
-import { ACCOUNT_TYPES, errMsg } from "@/lib/format";
+import { errMsg } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function Step({ n, title, done, active, children }: { n: number; title: string; done: boolean; active: boolean; children: ReactNode }) {
@@ -29,32 +26,17 @@ function Step({ n, title, done, active, children }: { n: number; title: string; 
 }
 
 export function Onboarding() {
-  const { setDemo } = useMode();
-  const { accounts } = useFilters();
   const qc = useQueryClient();
   const { toast } = useToast();
   const conf = useListConfluences();
   const strat = useListStrategies();
-  const createAccount = useCreateAccount();
   const createStrategy = useCreateStrategy();
 
-  const [acc, setAcc] = useState({ name: "", broker: "", currency: "USD", initialBalance: "", type: "personal_live" as AccountInputType });
   const [st, setSt] = useState({ name: "", entryRules: "", timeframe: "" });
 
-  const hasAccount = accounts.length > 0;
   const confCount = (conf.data ?? []).filter((c) => !c.archived).length;
   const hasStrategy = (strat.data ?? []).length > 0;
 
-  const saveAccount = () => {
-    if (!acc.name.trim() || !/^\d+(\.\d{1,8})?$/.test(acc.initialBalance) || !/^[A-Z]{3}$/.test(acc.currency)) {
-      toast({ title: "Check account details", description: "Name, a 3-letter currency and a positive starting balance are required." });
-      return;
-    }
-    createAccount.mutate({ data: { ...acc, name: acc.name.trim(), broker: acc.broker.trim() || undefined } }, {
-      onSuccess: () => { void qc.invalidateQueries(); toast({ title: "Account created" }); },
-      onError: (e) => toast({ title: "Could not create account", description: errMsg(e), variant: "destructive" }),
-    });
-  };
   const saveStrategy = () => {
     if (!st.name.trim()) return;
     createStrategy.mutate({ data: { name: st.name.trim(), entryRules: st.entryRules, timeframe: st.timeframe } }, {
@@ -67,27 +49,11 @@ export function Onboarding() {
     <div className="max-w-3xl">
       <div className="pb-8 rise">
         <div className="eyebrow mb-3">Your workspace · empty</div>
-        <h1 className="text-[32px] leading-[1.15] tracking-[-0.025em] font-light">Set up the laboratory.<br /><span className="text-muted-foreground">Four steps, about three minutes.</span></h1>
-        <p className="text-sm text-muted-foreground mt-4 max-w-xl">EDGE only shows what your own trades record. Nothing is pre-filled except ten starter confluences you can rename, disable or archive. Want to see a populated workspace first?{" "}
-          <button className="text-foreground underline underline-offset-4 decoration-border hover:decoration-foreground" onClick={() => setDemo(true)} data-testid="button-onboarding-demo">Explore the read-only demo</button>.
-        </p>
+        <h1 className="text-[32px] leading-[1.15] tracking-[-0.025em] font-light">Start your trading journal.<br /><span className="text-muted-foreground">No account or balance setup.</span></h1>
+        <p className="text-sm text-muted-foreground mt-4 max-w-xl">Log your first trade right away. Confluences and strategies are optional ways to organize your review. Track balances separately in Prop Firm Manager.</p>
       </div>
       <div className="space-y-3">
-        <Step n={1} title="Create a private account" done={hasAccount} active={!hasAccount}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Account name</Label><Input value={acc.name} onChange={(e) => setAcc({ ...acc, name: e.target.value })} placeholder="IC Markets Raw" data-testid="input-onb-account-name" /></div>
-            <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Broker (optional)</Label><Input value={acc.broker} onChange={(e) => setAcc({ ...acc, broker: e.target.value })} placeholder="Broker" data-testid="input-onb-broker" /></div>
-            <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Type</Label>
-              <NSelect value={acc.type} onChange={(v) => setAcc({ ...acc, type: v as AccountInputType })} className="h-9" testId="select-onb-type" options={Object.entries(ACCOUNT_TYPES).map(([value, label]) => ({ value, label }))} /></div>
-            <div className="grid grid-cols-[90px_1fr] gap-2">
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Currency</Label><Input value={acc.currency} maxLength={3} onChange={(e) => setAcc({ ...acc, currency: e.target.value.toUpperCase() })} className="num uppercase" data-testid="input-onb-currency" /></div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Starting balance</Label><Input value={acc.initialBalance} inputMode="decimal" onChange={(e) => setAcc({ ...acc, initialBalance: e.target.value.replace(/[^\d.]/g, "") })} placeholder="25000" className="num" data-testid="input-onb-balance" /></div>
-            </div>
-          </div>
-          {!hasAccount && <Button className="mt-5" onClick={saveAccount} disabled={createAccount.isPending} data-testid="button-onb-create-account">{createAccount.isPending ? "Creating..." : "Create account"}</Button>}
-          {hasAccount && <p className="text-sm text-muted-foreground">{accounts[0].name} · {accounts[0].currency}</p>}
-        </Step>
-        <Step n={2} title="Review your confluences" done={hasAccount && confCount > 0} active={hasAccount}>
+        <Step n={1} title="Review your confluences (optional)" done={confCount > 0} active>
           <p className="text-sm text-muted-foreground">{conf.isLoading ? "Loading..." : `${confCount} confluences ready.`} These are the conditions you tag on each trade. Rename them to match your own language — EDGE will track how trades that include them performed.</p>
           <div className="flex flex-wrap gap-1.5 mt-3">
             {(conf.data ?? []).filter((c) => !c.archived).slice(0, 12).map((c) => (
@@ -96,7 +62,7 @@ export function Onboarding() {
           </div>
           <Button variant="outline" size="sm" className="mt-4" asChild><Link href="/settings?tab=confluences" data-testid="link-onb-confluences">Edit confluences <ArrowRight className="h-3.5 w-3.5 ml-1.5" /></Link></Button>
         </Step>
-        <Step n={3} title="Describe one strategy" done={hasStrategy} active={hasAccount && !hasStrategy}>
+        <Step n={2} title="Describe one strategy (optional)" done={hasStrategy} active={!hasStrategy}>
           <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
             <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Name</Label><Input value={st.name} onChange={(e) => setSt({ ...st, name: e.target.value })} placeholder="London breakout retest" data-testid="input-onb-strategy-name" /></div>
             <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Timeframe</Label><Input value={st.timeframe} onChange={(e) => setSt({ ...st, timeframe: e.target.value })} placeholder="H4" data-testid="input-onb-strategy-tf" /></div>
@@ -105,7 +71,7 @@ export function Onboarding() {
           {!hasStrategy && <div className="flex gap-2 mt-5"><Button onClick={saveStrategy} disabled={!st.name.trim() || createStrategy.isPending} data-testid="button-onb-create-strategy">Save strategy</Button><Button variant="ghost" asChild><Link href="/strategies">Full editor</Link></Button></div>}
           {hasStrategy && <p className="text-sm text-muted-foreground">{strat.data?.[0]?.name}</p>}
         </Step>
-        <Step n={4} title="Log your first trade" done={false} active={hasAccount}>
+        <Step n={3} title="Log your first trade" done={false} active>
           <p className="text-sm text-muted-foreground mb-4">Drafts are fine. Record the setup before entry, then close it out later — R is measured against the initial risk you lock in when the trade first leaves draft.</p>
           <Button asChild><Link href="/trades/new" data-testid="link-onb-first-trade">Log first trade <ArrowRight className="h-3.5 w-3.5 ml-1.5" /></Link></Button>
         </Step>

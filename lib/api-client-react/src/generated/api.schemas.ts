@@ -548,7 +548,13 @@ export const TradeInputGrade = {
 } as const;
 
 export interface TradeInput {
-  accountId: string;
+  /** Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades. */
+  accountId?: string;
+  /**
+     * Trade denomination. Defaults to USD for new trades; an entered trade retains its original currency.
+     * @pattern ^[A-Z]{3}$
+     */
+  currency?: string;
   status: TradeInputStatus;
   /** @maxLength 30 */
   symbol?: string;
@@ -623,6 +629,7 @@ export interface TradeInput {
 
 export type Trade = TradeInput & ({
   id: string;
+  accountId: string;
   accountName: string;
   currency: string;
   /** @nullable */
@@ -716,6 +723,11 @@ export type DemoParameter = boolean;
 
 export type AccountIdParameter = string;
 
+/**
+ * Report all journal trades denominated in this currency without combining currencies.
+ */
+export type TradeCurrencyParameter = string;
+
 export type FromParameter = string;
 
 export type ToParameter = string;
@@ -783,6 +795,11 @@ export type ListTradesParams = {
  */
 demo?: DemoParameter;
 accountId?: AccountIdParameter;
+/**
+ * Report all journal trades denominated in this currency without combining currencies.
+ * @pattern ^[A-Z]{3}$
+ */
+currency?: TradeCurrencyParameter;
 from?: FromParameter;
 to?: ToParameter;
 symbol?: SymbolParameter;
@@ -805,6 +822,11 @@ export type GetAnalyticsParams = {
  */
 demo?: DemoParameter;
 accountId?: AccountIdParameter;
+/**
+ * Report all journal trades denominated in this currency without combining currencies.
+ * @pattern ^[A-Z]{3}$
+ */
+currency?: TradeCurrencyParameter;
 from?: FromParameter;
 to?: ToParameter;
 symbol?: SymbolParameter;

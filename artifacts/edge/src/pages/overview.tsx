@@ -49,7 +49,7 @@ export default function Overview() {
                 <Stat label="Profit factor" value={pf(m)} sub={m.profitFactorInfinite ? "No losing trades yet" : "Gross win / gross loss"} testId="stat-pf" />
                 <Stat label="Avg R" value={rFmt(m.averageR)} valueClass={tone(m.averageR)} sub={`Median ${rFmt(m.medianR)} · n=${m.rSample}`} testId="stat-avg-r" hint="R is only computed for trades with a recorded initial risk. n shows how many qualify." />
                 <Stat label="Total R" value={rFmt(m.totalR)} valueClass={tone(m.totalR)} testId="stat-total-r" />
-                <Stat label="Max drawdown" value={money(m.maxDrawdown, cur)} valueClass={Number(m.maxDrawdown) ? "text-neg" : ""} sub={m.maxDrawdownPercent != null ? `${pctRaw(m.maxDrawdownPercent)} of peak` : "Realized balance"} testId="stat-max-dd" />
+                <Stat label="Max drawdown" value={money(m.maxDrawdown, cur)} valueClass={Number(m.maxDrawdown) ? "text-neg" : ""} sub="From trading P&L peak" testId="stat-max-dd" />
                 <Stat label="Plan adherence" value={ratio(m.ruleAdherence)} sub="Followed plan" testId="stat-adherence" />
                 <Stat label="Open" value={a.openTrades} sub="Not in metrics" testId="stat-open" />
               </StatStrip>
@@ -58,7 +58,7 @@ export default function Overview() {
               )}
               {a.warnings.map((w, i) => <Caution key={i}>{w}</Caution>)}
               <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
-                <Panel title="Realized balance" meta="Closed trades and cash flows only · not mark-to-market" actions={<Link href="/performance" className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1" data-testid="link-to-performance">Performance <ArrowUpRight className="h-3 w-3" /></Link>}>
+                <Panel title="Cumulative trading P&L" meta="Closed trades only · starting capital and cash flows excluded" actions={<Link href="/performance" className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1" data-testid="link-to-performance">Performance <ArrowUpRight className="h-3 w-3" /></Link>}>
                   {a.equity.length > 1 ? <EquityChart data={a.equity} currency={cur} /> : <div className="h-[260px] flex items-center justify-center text-sm text-muted-foreground">Need at least two closed trades to draw a curve.</div>}
                 </Panel>
                 <Panel title="Confluences, observed" meta="Association, not causation" bodyClass="p-0" actions={<Link href="/confluences" className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1" data-testid="link-to-confluences">Analyze <ArrowUpRight className="h-3 w-3" /></Link>}>
