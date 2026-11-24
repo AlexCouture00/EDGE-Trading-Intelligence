@@ -452,6 +452,9 @@ components:
       required: [accountId, balance, equity, note]
       properties:
         accountId: { type: string, format: uuid }
+        recordedOn:
+          allOf: [{ $ref: "#/components/schemas/PropDay" }]
+          description: Effective balance date, not the time this entry was added. Defaults to the UTC insertion date for older clients. Future dates are not allowed.
         balance: { $ref: "#/components/schemas/PropMoney" }
         equity: { type: [string, "null"], pattern: '^-?\d{1,16}(\.\d{1,8})?$' }
         note: { type: string, maxLength: 10000 }
@@ -547,7 +550,7 @@ components:
             id: { type: string, format: uuid }
             previousBalance: { $ref: "#/components/schemas/PropMoney" }
             difference: { type: string, pattern: '^-?\d{1,17}(\.\d{1,8})?$' }
-            createdAt: { type: string }
+            createdAt: { type: string, description: Server insertion timestamp retained for audit and ordering entries on the same balance date. }
     PropChallenge:
       allOf:
         - { $ref: "#/components/schemas/PropChallengeInput" }

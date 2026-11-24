@@ -5,7 +5,7 @@ import {
   propChallenges, propRules, propExpenses, propPayouts,
 } from "@workspace/db";
 import { CreatePropRecordBody, GetPropManagerResponse, CreatePropRecordParams } from "@workspace/api-zod";
-import { subtractMoney } from "@workspace/prop-math";
+import { balanceHistory, subtractMoney } from "@workspace/prop-math";
 import { HttpError, parseId } from "../lib/edge-data";
 
 const router: IRouter = Router();
@@ -18,6 +18,13 @@ type Kind = keyof typeof tables;
 const kindOf = (params: unknown): Kind => CreatePropRecordParams.parse(params).kind;
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+function balancePoint(row: typeof propBalances.$inferSelect) {
+  return {
+    id: row.id, balance: String(row.data.balance), createdAt: row.createdAt.toISOString(),
+    recordedOn: typeof row.data.recordedOn === "string" ? row.data.recordedOn : undefined,
+  };
+}
+
 function calendarDay(v: unknown) {
   if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number(v.slice(0, 4)) < 1
     || !Number.isFinite(Date.parse(`${v}T00:00:00Z`)) || new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) !== v) {
@@ -28,6 +35,12 @@ function validateAttributes(kind: Kind, raw: unknown): Record<string, unknown> {
   // The union documents the endpoint; its position maps to one strict schema
   // per resource, preventing another kind's fields or forged ownership.
   const data = CreatePropRecordBody.options[kinds.indexOf(kind)]!.strict().parse(raw) as Record<string, unknown>;
+  if (kind === "balances" && data.recordedOn !== undefined) {
+    calendarDay(data.recordedOn);
+    if (String(data.recordedOn) > new Date().toISOString().slice(0, 10)) {
+      throw new HttpError(400, "Balance date cannot be in the future.");
+    }
+  }
   for (const key of ["name", "phase"]) {
     if (typeof data[key] === "string" && key === "name" && !data[key].trim()) throw new HttpError(400, "A name is required.");
   }
@@ -118,10 +131,11 @@ async function save(kind: Kind, ownerId: string, raw: unknown, id?: string) {
         data.closingBalance = existing.data.closingBalance;
         data.completedAt = existing.data.completedAt;
       } else if (["passed", "failed", "expired"].includes(String(data.status))) {
-        const [last] = await tx.select().from(propBalances).where(and(
+        const snapshots = await tx.select().from(propBalances).where(and(
           eq(propBalances.ownerId, ownerId), eq(propBalances.accountId, String(data.accountId)),
-        )).orderBy(desc(propBalances.createdAt)).limit(1);
-        data.closingBalance = last?.data.balance ?? relatedAccount!.data.startingBalance;
+        ));
+        const last = balanceHistory(String(relatedAccount!.data.startingBalance), snapshots.map(balancePoint)).at(-1);
+        data.closingBalance = last?.balance ?? relatedAccount!.data.startingBalance;
         data.completedAt = new Date().toISOString();
       } else {
         data.closingBalance = null;
@@ -129,15 +143,18 @@ async function save(kind: Kind, ownerId: string, raw: unknown, id?: string) {
       }
     }
     if (kind === "balances") {
-      // Locking the parent serializes concurrent updates, so previous/difference
-      // remain a continuous chain even with rapid requests or equal timestamps.
-      const [previous] = await tx.select().from(propBalances).where(and(
+      // Parent locking serializes writes. Keep audit time monotonic, independently
+      // of the user-selected effective day. Existing rows are never rewritten.
+      const snapshots = await tx.select().from(propBalances).where(and(
         eq(propBalances.ownerId, ownerId), eq(propBalances.accountId, String(data.accountId)),
-      )).orderBy(desc(propBalances.createdAt)).limit(1);
-      const previousBalance = String(previous?.data.balance ?? relatedAccount!.data.startingBalance);
+      )).orderBy(desc(propBalances.createdAt));
+      createdAt = new Date(Math.max(Date.now(), (snapshots[0]?.createdAt.getTime() ?? 0) + 1));
+      data.recordedOn ??= createdAt.toISOString().slice(0, 10);
+      const previous = balanceHistory(String(relatedAccount!.data.startingBalance), snapshots.map(balancePoint))
+        .filter(point => point.recordedOn <= String(data.recordedOn)).at(-1);
+      const previousBalance = String(previous?.balance ?? relatedAccount!.data.startingBalance);
       data.previousBalance = previousBalance;
       data.difference = subtractMoney(String(data.balance), previousBalance);
-      createdAt = new Date(Math.max(Date.now(), (previous?.createdAt.getTime() ?? 0) + 1));
     }
     if (existing) {
       await tx.update(table).set({ data, ...relationships }).where(and(eq(table.ownerId, ownerId), eq(table.id, existing.id)));
@@ -171,7 +188,11 @@ router.get("/prop-manager", async (_req, res): Promise<void> => {
       ...(kind === "balances" ? { createdAt: row.createdAt.toISOString() } : {}),
     }))] as const;
   }));
-  res.json(GetPropManagerResponse.parse(Object.fromEntries(entries)));
+  const portfolio = GetPropManagerResponse.parse(Object.fromEntries(entries));
+  portfolio.balances = portfolio.accounts.flatMap(account => balanceHistory(
+    account.startingBalance, portfolio.balances.filter(balance => balance.accountId === account.id),
+  ));
+  res.json(GetPropManagerResponse.parse(portfolio));
 });
 router.post("/prop-manager/:kind", async (req, res): Promise<void> => {
   res.status(201).json(await save(kindOf(req.params), res.locals.ownerId, req.body));

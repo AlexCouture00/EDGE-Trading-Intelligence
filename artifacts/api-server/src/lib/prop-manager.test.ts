@@ -117,6 +117,41 @@ test("prop manager persists history and enforces private ownership for every rel
       const other = await load("b");
       assert.equal(other.balances[0]!.difference, "-10000000000099999.99999999");
     });
+    await t.test("backdated balances persist in date order without changing current balance or existing stored rows", async () => {
+      const before = await load(), current = accountSnapshot(before, accountA);
+      const storedBefore = await db.select().from(propBalances).where(eq(propBalances.accountId, accountA));
+      const id = await create("balances", { ...balance(accountA, "100150.15"), recordedOn: "2026-11-02" });
+      const after = await load(), s = accountSnapshot(after, accountA);
+      assert.equal(s.balance, current.balance);
+      assert.equal(s.balances[0].id, id);
+      assert.equal(s.balances[0].recordedOn, "2026-11-02");
+      assert.equal(s.balances[1].previousBalance, "100150.15");
+      assert.equal(after.balances.find(b => b.id === id)!.recordedOn, "2026-11-02");
+      assert.equal(sumMoney(s.balances.map(b => b.difference)), subtractMoney(s.balance, "100000"));
+      const storedAfter = await db.select().from(propBalances).where(eq(propBalances.accountId, accountA));
+      const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id);
+      assert.deepEqual(storedAfter.filter(row => row.id !== id).sort(byId), storedBefore.sort(byId));
+      assert.equal((await request("/balances", "POST", { ...balance(accountA), recordedOn: "2026-11-02" }, "b")).status, 404);
+      assert.equal((await request(`/balances/${id}`, "PUT", { ...balance(accountA), recordedOn: "2026-11-03" })).status, 409);
+    });
+    await t.test("invalid or future balance dates cannot create records", async () => {
+      const before = await db.select().from(propBalances).where(eq(propBalances.accountId, accountA));
+      for (const recordedOn of ["2026-02-30", "9999-12-31", "0000-01-01", "2026-11-01T12:00:00Z"]) {
+        assert.equal((await request("/balances", "POST", { ...balance(accountA), recordedOn })).status, 400);
+      }
+      const after = await db.select().from(propBalances).where(eq(propBalances.accountId, accountA));
+      assert.deepEqual(after, before);
+    });
+    await t.test("legacy snapshots get their original insertion date without a database backfill", async () => {
+      const [row] = await db.select().from(propBalances).where(eq(propBalances.accountId, accountB));
+      const { recordedOn: _date, ...legacy } = row.data;
+      await db.update(propBalances).set({ data: legacy }).where(eq(propBalances.id, row.id));
+      const before = await db.select().from(propBalances).where(eq(propBalances.id, row.id));
+      const p = await load("b"), restored = p.balances.find(b => b.id === row.id)!;
+      assert.equal(restored.recordedOn, row.createdAt.toISOString().slice(0, 10));
+      assert.equal(restored.createdAt, row.createdAt.toISOString());
+      assert.deepEqual(await db.select().from(propBalances).where(eq(propBalances.id, row.id)), before);
+    });
     await t.test("received payouts count once, never automatically change balances or funded lifecycle", async () => {
       await request(`/accounts/${accountA}`, "PUT", { ...account(firmA), status: "funded" });
       const id = await create("payouts", payout(accountA));
@@ -134,8 +169,11 @@ test("prop manager persists history and enforces private ownership for every rel
     });
     await t.test("completed challenge results remain fixed when the next phase balance changes", async () => {
       const id = await create("challenges", challenge(accountA));
+      const currentBalance = accountSnapshot(await load(), accountA).balance;
+      await create("balances", { ...balance(accountA, "99000"), recordedOn: "2020-01-01" });
       assert.equal((await request(`/challenges/${id}`, "PUT", { ...challenge(accountA), status: "passed" })).status, 200);
       const before = await load(), c = before.challenges.find(c => c.id === id)!;
+      assert.equal(c.closingBalance, currentBalance);
       const fixed = challengeProgress(before, c);
       await create("balances", balance(accountA, "103000"));
       const after = await load();

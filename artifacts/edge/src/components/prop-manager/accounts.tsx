@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 import { Pencil, Plus, Wallet } from "lucide-react";
 import { useListAccounts, type PropAccount, type PropAccountInput, type PropBalance } from "@workspace/api-client-react";
-import { accountSnapshot, type Portfolio } from "@workspace/prop-math";
+import { accountSnapshot, balanceDate, type Portfolio } from "@workspace/prop-math";
 import { Empty, Money, Panel } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { dt, money } from "@/lib/format";
@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils";
 import {
   ACCOUNT_STATUS, ChartEmpty, EditorDialog, Field, MARKETS, MONEY_RE, MoneyIn, Pill, Sel, TextArea, TextIn, axisTick, nn, statusTone, tipStyle, today, usePropMutations,
 } from "./shared";
+import { balanceChartPoints, balanceDateLabel, validateBalanceDate } from "./balance-history";
 
 const NONE = "__none";
-type BalanceDraft = { balance: string; equity: string; note: string };
+type BalanceDraft = { recordedOn: string; balance: string; equity: string; note: string };
 
 export function Accounts({ p }: { p: Portfolio }) {
   const { save } = usePropMutations();
@@ -47,7 +48,7 @@ export function Accounts({ p }: { p: Portfolio }) {
               <thead><tr className="text-left text-muted-foreground border-b border-card-border">
                 <th className="font-normal px-4 py-2">Account</th><th className="font-normal px-3 py-2">Status</th>
                 <th className="font-normal px-3 py-2 text-right">Size</th><th className="font-normal px-3 py-2 text-right">Balance</th>
-                <th className="font-normal px-3 py-2 text-right">Balance change</th><th className="font-normal px-3 py-2">Updated</th><th className="px-4" />
+                <th className="font-normal px-3 py-2 text-right">Balance change</th><th className="font-normal px-3 py-2">Balance date</th><th className="px-4" />
               </tr></thead>
               <tbody>
                 {p.accounts.map((a) => {
@@ -60,7 +61,7 @@ export function Accounts({ p }: { p: Portfolio }) {
                       <td className="px-3 py-2.5 text-right num">{money(a.nominalSize, a.currency)}</td>
                       <td className="px-3 py-2.5 text-right num">{money(s.balance, a.currency)}</td>
                       <td className="px-3 py-2.5 text-right"><Money v={s.onAccountProfit} currency={a.currency} /></td>
-                      <td className="px-3 py-2.5 text-muted-foreground num text-[11.5px]">{s.updatedAt ? dt(s.updatedAt, "dd MMM yy") : "No snapshot"}</td>
+                      <td className="px-3 py-2.5 text-muted-foreground num text-[11.5px]">{s.balanceDate ? balanceDateLabel(s.balanceDate) : "No snapshot"}</td>
                       <td className="px-4 py-2.5 text-right whitespace-nowrap">
                         <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(a); }} data-testid={`button-edit-account-${a.id}`}><Pencil className="h-3.5 w-3.5" /></Button>
                       </td>
@@ -106,14 +107,17 @@ export function Accounts({ p }: { p: Portfolio }) {
       {(balanceFor || fixBalance) && (() => {
         const accId = fixBalance?.accountId ?? balanceFor!;
         const acc = p.accounts.find((a) => a.id === accId);
-        const init: BalanceDraft = fixBalance ? { balance: fixBalance.balance, equity: fixBalance.equity ?? "", note: "" } : { balance: "", equity: "", note: "" };
+        const init: BalanceDraft = fixBalance
+          ? { recordedOn: balanceDate(fixBalance), balance: fixBalance.balance, equity: fixBalance.equity ?? "", note: "" }
+          : { recordedOn: today(), balance: "", equity: "", note: "" };
         return (
           <EditorDialog key={fixBalance?.id ?? "new-balance"} open onClose={() => { setBalanceFor(null); setFixBalance(null); }} initial={init}
             title={fixBalance ? "Append correction snapshot" : `Record balance · ${acc?.name ?? ""}`}
-            description={fixBalance ? `History is append-only. This adds a new snapshot noted as a correction of the ${dt(fixBalance.createdAt)} entry; the original stays in history and the previous balance is the current latest.` : "Snapshots are appended to history, never overwritten. Payouts do not change balances automatically; record the post-payout balance here if the firm deducted it."}
-            validate={(d) => !MONEY_RE.test(d.balance) ? "Balance must be a plain decimal." : d.equity && !MONEY_RE.test(d.equity) ? "Equity must be a plain decimal or empty." : null}
-            onSubmit={(d) => save("balances", null, { accountId: accId, balance: d.balance, equity: nn(d.equity), note: fixBalance ? `Correction of ${dt(fixBalance.createdAt)} snapshot: ${d.note}`.slice(0, 10000) : d.note })}>
+            description={fixBalance ? `This appends a correction for ${balanceDateLabel(balanceDate(fixBalance))}; the original entry is kept. The selected balance date determines its place in history.` : "Choose the date the balance was observed, including past dates. History and progress follow this date, not when you add the entry. Payouts do not change balances automatically."}
+            validate={(d) => validateBalanceDate(d.recordedOn, today()) ?? (!MONEY_RE.test(d.balance) ? "Balance must be a plain decimal." : d.equity && !MONEY_RE.test(d.equity) ? "Equity must be a plain decimal or empty." : null)}
+            onSubmit={(d) => save("balances", null, { accountId: accId, recordedOn: d.recordedOn, balance: d.balance, equity: nn(d.equity), note: fixBalance ? `Correction of ${dt(fixBalance.createdAt)} snapshot: ${d.note}`.slice(0, 10000) : d.note })}>
             {(d, set) => <>
+              <Field label="Balance date" hint="The date this balance applies to. Past dates are supported." className="sm:col-span-2"><TextIn type="date" max={today()} value={d.recordedOn} onChange={(v) => set("recordedOn", v)} testId="input-balance-date" /></Field>
               <Field label={`New balance (${acc?.currency ?? ""})`}><MoneyIn value={d.balance} onChange={(v) => set("balance", v)} testId="input-balance-value" /></Field>
               <Field label="Reported equity (optional)"><MoneyIn value={d.equity} onChange={(v) => set("equity", v)} testId="input-balance-equity" placeholder="" /></Field>
               <Field label={fixBalance ? "Correction note" : "Note"} className="sm:col-span-2"><TextArea value={d.note} onChange={(v) => set("note", v)} testId="input-balance-note" /></Field>
@@ -128,7 +132,7 @@ export function Accounts({ p }: { p: Portfolio }) {
 function BalancePanel({ p, account, onAdd, onFix }: { p: Portfolio; account: PropAccount; onAdd: () => void; onFix: (b: PropBalance) => void }) {
   const s = accountSnapshot(p, account.id);
   const cur = account.currency;
-  const points = [{ t: Date.parse(account.purchasedOn), v: Number(account.startingBalance) }, ...s.balances.map((b) => ({ t: Date.parse(b.createdAt), v: Number(b.balance) }))];
+  const points = balanceChartPoints(account, s.balances);
   return (
     <Panel title={`Balance history · ${account.name}`} meta={`${cur}, manual snapshots`}
       actions={<Button size="sm" onClick={onAdd} data-testid="button-add-balance"><Plus className="h-3.5 w-3.5 mr-1" />Record balance</Button>}>
@@ -142,24 +146,25 @@ function BalancePanel({ p, account, onAdd, onFix }: { p: Portfolio; account: Pro
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={points}>
             <CartesianGrid vertical={false} stroke="hsl(220 6% 14%)" />
-            <XAxis type="number" dataKey="t" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(t: number) => dt(new Date(t).toISOString(), "dd MMM yy")} tick={axisTick} stroke="hsl(220 6% 18%)" />
+            <XAxis type="number" dataKey="t" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(t: number) => balanceDateLabel(new Date(t).toISOString().slice(0, 10))} tick={axisTick} stroke="hsl(220 6% 18%)" />
             <YAxis type="number" domain={["auto", "auto"]} tickFormatter={(v: number) => money(v, cur, { compact: true })} tick={axisTick} stroke="hsl(220 6% 18%)" width={64} />
-            <RTooltip contentStyle={tipStyle} labelFormatter={(t: number) => dt(new Date(t).toISOString())} formatter={(v: number) => [money(v, cur), "Recorded balance"]} />
+            <RTooltip contentStyle={tipStyle} labelFormatter={(t: number) => balanceDateLabel(new Date(t).toISOString().slice(0, 10))} formatter={(v: number) => [money(v, cur), "Recorded balance"]} />
             <Line type="stepAfter" dataKey="v" stroke="#61A9BD" strokeWidth={1.8} dot={points.length < 12} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       ) : <ChartEmpty>No snapshots yet. The chart starts at the starting balance once you record the first update. Values between snapshots are not interpolated.</ChartEmpty>}
+      {s.balances.length > 0 && <p className="text-[11.5px] text-muted-foreground mt-2">Progress follows balance dates. The chart shows the latest entry for each day; every original entry is retained below. Previous balances and differences follow chronological order.</p>}
       {s.balances.length > 0 && (
         <div className="overflow-x-auto -mx-4 mt-4">
           <table className="w-full text-[12.5px] min-w-[620px]">
             <thead><tr className="text-left text-muted-foreground border-y border-card-border">
-              <th className="font-normal px-4 py-2">Recorded</th><th className="font-normal px-3 py-2 text-right">Previous</th><th className="font-normal px-3 py-2 text-right">New</th>
+              <th className="font-normal px-4 py-2">Balance date / Added</th><th className="font-normal px-3 py-2 text-right">Previous</th><th className="font-normal px-3 py-2 text-right">New</th>
               <th className="font-normal px-3 py-2 text-right">Difference</th><th className="font-normal px-3 py-2 text-right">Equity</th><th className="font-normal px-3 py-2">Note</th><th className="px-4" />
             </tr></thead>
             <tbody>
               {[...s.balances].reverse().map((b) => (
                 <tr key={b.id} className="border-b border-card-border/60 last:border-0 row-hover" data-testid={`row-balance-${b.id}`}>
-                  <td className="px-4 py-2 num text-[11.5px] text-muted-foreground">{dt(b.createdAt)}</td>
+                  <td className="px-4 py-2 num text-[11.5px]"><div>{balanceDateLabel(balanceDate(b))}</div><div className="text-muted-foreground text-[10.5px]">Added {dt(b.createdAt)}</div></td>
                   <td className="px-3 py-2 text-right num">{money(b.previousBalance, cur)}</td>
                   <td className="px-3 py-2 text-right num">{money(b.balance, cur)}</td>
                   <td className="px-3 py-2 text-right"><Money v={b.difference} currency={cur} /></td>

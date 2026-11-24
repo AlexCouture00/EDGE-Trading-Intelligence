@@ -30,6 +30,7 @@ export const getPropManagerResponseAccountsItemOnePhaseMax = 150;
 
 export const getPropManagerResponseAccountsItemOneNotesMax = 10000;
 
+export const getPropManagerResponseBalancesItemOneRecordedOnOneRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const getPropManagerResponseBalancesItemOneBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
 export const getPropManagerResponseBalancesItemOneEquityRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
 export const getPropManagerResponseBalancesItemOneNoteMax = 10000;
@@ -115,6 +116,7 @@ export const GetPropManagerResponse = zod.object({
 }))),
   "balances": zod.array(zod.object({
   "accountId": zod.string().uuid(),
+  "recordedOn": zod.string().regex(getPropManagerResponseBalancesItemOneRecordedOnOneRegExp).optional().describe('Effective balance date, not the time this entry was added. Defaults to the UTC insertion date for older clients. Future dates are not allowed.'),
   "balance": zod.string().regex(getPropManagerResponseBalancesItemOneBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
   "equity": zod.string().regex(getPropManagerResponseBalancesItemOneEquityRegExp).nullable(),
   "note": zod.string().max(getPropManagerResponseBalancesItemOneNoteMax)
@@ -122,7 +124,7 @@ export const GetPropManagerResponse = zod.object({
   "id": zod.string().uuid(),
   "previousBalance": zod.string().regex(getPropManagerResponseBalancesItemTwoPreviousBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
   "difference": zod.string().regex(getPropManagerResponseBalancesItemTwoDifferenceRegExp),
-  "createdAt": zod.string()
+  "createdAt": zod.string().describe('Server insertion timestamp retained for audit and ordering entries on the same balance date.')
 }))),
   "challenges": zod.array(zod.object({
   "accountId": zod.string().uuid(),
@@ -216,6 +218,7 @@ export const createPropRecordBodyTwoPhaseMax = 150;
 
 export const createPropRecordBodyTwoNotesMax = 10000;
 
+export const createPropRecordBodyThreeRecordedOnOneRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const createPropRecordBodyThreeBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
 export const createPropRecordBodyThreeEquityRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
 export const createPropRecordBodyThreeNoteMax = 10000;
@@ -292,6 +295,7 @@ export const CreatePropRecordBody = zod.union([zod.object({
   "notes": zod.string().max(createPropRecordBodyTwoNotesMax)
 }),zod.object({
   "accountId": zod.string().uuid(),
+  "recordedOn": zod.string().regex(createPropRecordBodyThreeRecordedOnOneRegExp).optional().describe('Effective balance date, not the time this entry was added. Defaults to the UTC insertion date for older clients. Future dates are not allowed.'),
   "balance": zod.string().regex(createPropRecordBodyThreeBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
   "equity": zod.string().regex(createPropRecordBodyThreeEquityRegExp).nullable(),
   "note": zod.string().max(createPropRecordBodyThreeNoteMax)
@@ -377,6 +381,7 @@ export const updatePropRecordBodyTwoPhaseMax = 150;
 
 export const updatePropRecordBodyTwoNotesMax = 10000;
 
+export const updatePropRecordBodyThreeRecordedOnOneRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const updatePropRecordBodyThreeBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
 export const updatePropRecordBodyThreeEquityRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
 export const updatePropRecordBodyThreeNoteMax = 10000;
@@ -453,6 +458,7 @@ export const UpdatePropRecordBody = zod.union([zod.object({
   "notes": zod.string().max(updatePropRecordBodyTwoNotesMax)
 }),zod.object({
   "accountId": zod.string().uuid(),
+  "recordedOn": zod.string().regex(updatePropRecordBodyThreeRecordedOnOneRegExp).optional().describe('Effective balance date, not the time this entry was added. Defaults to the UTC insertion date for older clients. Future dates are not allowed.'),
   "balance": zod.string().regex(updatePropRecordBodyThreeBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
   "equity": zod.string().regex(updatePropRecordBodyThreeEquityRegExp).nullable(),
   "note": zod.string().max(updatePropRecordBodyThreeNoteMax)

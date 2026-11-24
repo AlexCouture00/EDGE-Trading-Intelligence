@@ -270,8 +270,15 @@ Procedure used for the approved Supabase activation:
   before personal income taxes. Requested/approved payouts are pending, not cash.
   A payout's processing fee is informational and already withheld from its net
   received amount; do not subtract it twice or duplicate it as an expense.
-- Balance snapshots are append-only. A correction appends a new current balance
-  with a correction note; it does not modify the original snapshot. Payouts never
+- Balance snapshots are append-only. `recordedOn` is the observed calendar date;
+  `createdAt` remains the server insertion timestamp. Old entries without
+  `recordedOn` retain their original UTC insertion day, without a database backfill.
+  Current balances, challenge closure and progress use balance-date order, with
+  insertion time breaking same-day ties. Read-time previous/difference values are
+  recalculated chronologically without updating stored snapshots. Charts use
+  the last entry per day; the table retains all entries and insertion timestamps.
+  A correction defaults to the corrected entry's balance date and appends a new
+  snapshot with a correction note; it does not modify the original. Payouts never
   adjust balances automatically. Explicitly record the resulting balance if a
   firm deducted a payout.
 - Balance minus starting balance is a balance-change estimate, not necessarily

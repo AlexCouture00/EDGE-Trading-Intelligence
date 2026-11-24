@@ -107,6 +107,8 @@ export interface PropAccountInput {
 
 export interface PropBalanceInput {
   accountId: string;
+  /** Effective balance date, not the time this entry was added. Defaults to the UTC insertion date for older clients. Future dates are not allowed. */
+  recordedOn?: PropDay;
   balance: PropMoney;
   /**
      * @nullable
@@ -330,6 +332,7 @@ export type PropBalance = PropBalanceInput & {
   previousBalance: PropMoney;
   /** @pattern ^-?\d{1,17}(\.\d{1,8})?$ */
   difference: string;
+  /** Server insertion timestamp retained for audit and ordering entries on the same balance date. */
   createdAt: string;
 };
 

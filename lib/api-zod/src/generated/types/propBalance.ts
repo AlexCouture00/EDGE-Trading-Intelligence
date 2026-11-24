@@ -13,5 +13,6 @@ export type PropBalance = PropBalanceInput & {
   previousBalance: PropMoney;
   /** @pattern ^-?\d{1,17}(\.\d{1,8})?$ */
   difference: string;
+  /** Server insertion timestamp retained for audit and ordering entries on the same balance date. */
   createdAt: string;
 };

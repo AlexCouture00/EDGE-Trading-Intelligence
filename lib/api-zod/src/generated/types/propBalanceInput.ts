@@ -5,10 +5,13 @@
  * EDGE Trading Intelligence
  * OpenAPI spec version: 0.1.0
  */
+import type { PropDay } from './propDay';
 import type { PropMoney } from './propMoney';
 
 export interface PropBalanceInput {
   accountId: string;
+  /** Effective balance date, not the time this entry was added. Defaults to the UTC insertion date for older clients. Future dates are not allowed. */
+  recordedOn?: PropDay;
   balance: PropMoney;
   /**
      * @nullable

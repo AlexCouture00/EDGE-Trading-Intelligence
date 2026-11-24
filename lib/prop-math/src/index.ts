@@ -9,17 +9,36 @@ export const sumMoney = (values: (string | number)[]) => values.reduce<Decimal>(
 export const subtractMoney = (a: string, b: string) => new D(a).minus(b).toFixed();
 const activeStatuses = new Set(["not_started", "evaluation", "funded", "passed"]);
 
+type BalancePoint = Pick<Portfolio["balances"][number], "id" | "balance" | "createdAt" | "recordedOn">;
+export const balanceDate = (balance: Pick<BalancePoint, "createdAt" | "recordedOn">) =>
+  balance.recordedOn ?? balance.createdAt.slice(0, 10);
+
+/** Derive chronological deltas without rewriting any stored snapshot or audit time. */
+export function balanceHistory<T extends BalancePoint>(startingBalance: string, entries: T[]) {
+  let previous = startingBalance;
+  return [...entries]
+    .sort((a, b) => balanceDate(a).localeCompare(balanceDate(b))
+      || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
+    .map(entry => {
+      const result = {
+        ...entry, recordedOn: balanceDate(entry),
+        previousBalance: previous, difference: subtractMoney(entry.balance, previous),
+      };
+      previous = entry.balance;
+      return result;
+    });
+}
+
 export function accountSnapshot(p: Portfolio, accountId: string) {
   const account = p.accounts.find(a => a.id === accountId);
   if (!account) throw new Error("Unknown prop account");
-  const balances = p.balances.filter(b => b.accountId === accountId)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+  const balances = balanceHistory(account.startingBalance, p.balances.filter(b => b.accountId === accountId));
   const latest = balances.at(-1);
   const balance = latest?.balance ?? account.startingBalance;
   const highest = Decimal.max(account.startingBalance, ...balances.map(b => b.balance)).toFixed();
   return {
     account, balances, balance, highest, equity: latest?.equity ?? null,
-    updatedAt: latest?.createdAt ?? null,
+    updatedAt: latest?.createdAt ?? null, balanceDate: latest?.recordedOn ?? null,
     onAccountProfit: subtractMoney(balance, account.startingBalance),
   };
 }

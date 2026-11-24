@@ -101,7 +101,7 @@ export function Field({ label, children, hint, className }: { label: string; chi
     </label>
   );
 }
-export function TextIn({ value, onChange, testId, ...rest }: { value: string; onChange: (v: string) => void; testId: string; placeholder?: string; type?: string; disabled?: boolean; inputMode?: "decimal" | "numeric" | "text" | "url" }) {
+export function TextIn({ value, onChange, testId, ...rest }: { value: string; onChange: (v: string) => void; testId: string; placeholder?: string; type?: string; max?: string; disabled?: boolean; inputMode?: "decimal" | "numeric" | "text" | "url" }) {
   return <Input value={value} onChange={(e) => onChange(e.target.value)} data-testid={testId} className="h-9 bg-background" {...rest} />;
 }
 export function MoneyIn(p: { value: string; onChange: (v: string) => void; testId: string; placeholder?: string; disabled?: boolean }) {
