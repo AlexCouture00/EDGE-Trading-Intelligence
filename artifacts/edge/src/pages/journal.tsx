@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NSelect } from "@/components/nselect";
 import { FilterBar } from "@/components/filter-bar";
-import { DirPill, Empty, ErrorBlock, LoadingBlock, PageHeader, Panel, R, StatusPill, WriteGate } from "@/components/kit";
+import { DirPill, Empty, ErrorBlock, LoadingBlock, PageHeader, Panel, R, WriteGate } from "@/components/kit";
 import { totalRecordedR } from "@/lib/journal-r";
 import { rFmt } from "@/lib/format";
 import { useFilters } from "@/lib/filters";
@@ -81,8 +81,8 @@ export default function Journal() {
             <table className="w-full text-[12.5px]">
               <thead>
                 <tr className="text-left text-muted-foreground border-b border-card-border">
-                  {["Date", "Symbol", "Side", "Status", "Strategy", "MFE", "Session", "R"].map((h, i) => (
-                    <th key={h} className={`font-normal px-3 py-2.5 whitespace-nowrap ${i === 0 ? "pl-4" : ""} ${i === 5 || i === 7 ? "text-right" : ""} ${i === 7 ? "pr-4" : ""}`}>{h}</th>
+                  {["Date", "Symbol", "Side", "Strategy", "MFE", "Session", "Market regime", "Volatility", "R"].map((h, i) => (
+                    <th key={h} className={`font-normal px-3 py-2.5 whitespace-nowrap ${i === 0 ? "pl-4" : ""} ${h === "MFE" || h === "R" ? "text-right" : ""} ${h === "R" ? "pr-4" : ""}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -92,10 +92,11 @@ export default function Journal() {
                     <td className="pl-4 px-3 py-2.5 num text-muted-foreground whitespace-nowrap">{dt(t.exitAt ?? t.entryAt ?? t.createdAt, "dd MMM yy")}</td>
                     <td className="px-3 py-2.5 font-medium">{t.symbol || <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-3 py-2.5"><DirPill d={t.direction} /></td>
-                    <td className="px-3 py-2.5"><StatusPill status={t.status} /></td>
                     <td className="px-3 py-2.5 text-muted-foreground truncate max-w-[160px]">{t.strategyName ?? "—"}</td>
                     <td className="px-3 py-2.5 num text-right whitespace-nowrap" data-testid={`cell-mfe-${t.id}`}>{rFmt(t.mfeR)}</td>
                     <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap" data-testid={`cell-session-${t.id}`}>{t.session?.trim() || "—"}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap" data-testid={`cell-regime-${t.id}`}>{t.regime?.trim() || "—"}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap" data-testid={`cell-volatility-${t.id}`}>{t.volatility?.trim() || "—"}</td>
                     <td className="pr-4 px-3 py-2.5 text-right"><R v={t.realizedR} /></td>
                   </tr>
                 ))}
