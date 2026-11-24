@@ -51,6 +51,14 @@ Accounts and cash flows, draft/open/closed trade journaling and reviews, custom 
 - Build stable end-to-end milestones; do not attempt every advanced feature in one untested change.
 - Do not deploy or perform destructive operations without permission.
 
+## Development and deployment workflow
+
+- Use **Replit → GitHub `main` → Vercel Production** for routine updates. Work directly on `main` whenever practical; do not create Preview deployments or feature branches for routine updates.
+- Preserve completed work, fetch and synchronize safely with the latest remote `main`, then run TypeScript checks, production builds and relevant automated tests before committing and pushing completed changes.
+- A push to `main` triggers the automatic Vercel Production deployment. Verify the application after deployment.
+- Before applying any Production database migration, show exactly what will change and obtain explicit approval. Keep migrations additive and non-destructive.
+- Do not force-push, reset the database, delete existing data or modify production secrets.
+
 ## Gotchas
 
 - The isolated demo dataset is read-only. Signed-in private workspaces start without sample trades.

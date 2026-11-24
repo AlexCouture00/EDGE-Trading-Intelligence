@@ -6,6 +6,10 @@ Both services stay in one Vercel project through the root `vercel.json`.
 Never merge to main, deploy Production, reset the database, or migrate owner IDs
 without the user's explicit approval.
 
+The current routine workflow is **Replit → GitHub `main` → Vercel Production**,
+as requested by the owner. Work on `main` whenever practical; Preview deployments
+and feature branches are not required for routine updates. See section 5.
+
 ## 1. Supabase Auth
 
 Use the existing Supabase project. Do not initialize its tables again.
@@ -38,9 +42,10 @@ RLS/revoked browser-role privileges. Do not add browser SQL policies.
 
 ## 2. Environment variables
 
-Set the following separately in development and **Vercel Project → Settings →
-Environment Variables → Preview**. Never silently copy Production settings
-into development. Vercel's build-time frontend settings require a new build.
+Keep development separate from **Vercel Project → Settings → Environment
+Variables → Production**. Preview scopes are needed only for separately requested
+Preview work. Do not modify production secrets as part of routine updates or
+silently copy them into development. Frontend build-time settings require a new build.
 
 | Name | Purpose |
 | --- | --- |
@@ -108,28 +113,30 @@ Before any owner migration:
 The existing initializer is only for a different, NEW EMPTY approved database.
 It must not run against this already initialized project.
 
-## 5. Vercel Preview and Production
+## 5. Direct-to-main Production workflow
 
 Keep the root Services configuration: frontend `edge`, backend `api-server`,
 same-origin `/api` rewrites, Node 24 and the frozen pnpm lockfile. Do not configure
 an auth proxy, separate frontend/backend projects, or Replit hosting.
 
-1. Add the new Preview-only variables above and remove obsolete Auth variables.
-2. Push the feature branch and create a **Preview** deployment only; do not merge
-   `main`. In the Vercel API this project uses explicit `target: "staging"` for
-   Preview; verify the returned environment is `preview`. Never omit the target.
-3. Leave Vercel Preview Authentication enabled. Use an exact-host automation
-   bypass cookie/header only for authorized testing, never global headers.
-4. Verify owner email/password login, refresh/re-login persistence, logout,
-   wrong-password denial, other-user 403, expired/forged/wrong-project JWT 401,
-   demo denial and trade/account/strategy/confluence ownership checks.
-5. Complete any separately approved owner migration and verify existing data.
+1. Preserve existing work, fetch remote branches and safely synchronize with
+   `origin/main`. Use fast-forward synchronization where possible; never force-push.
+2. Run the automated checks below, with database tests on a disposable local
+   database, not Supabase or the existing Replit development database.
+3. Review migrations. Before any Production database migration, explain the
+   exact objects and data affected and obtain explicit approval. Check the live
+   Drizzle journal first: do not reapply an already installed migration.
+4. Commit the validated changes on `main` and push to GitHub when deployment is
+   authorized. Let the existing Git integration deploy Vercel Production automatically.
+5. Verify frontend assets, API health, private endpoint protection and the
+   signed-in experience where an authorized session is available. Report any
+   checks that could not be performed; do not claim persistence was tested without it.
 
-Only after passing Preview tests and explicit production approval: configure
-separate Production environment scopes, the exact intended Auth identity/data
-strategy and site/domain, review the PR, then merge to main or explicitly deploy
-the reviewed commit as Production. Keep Preview isolated from real trading data.
-Do not reinitialize the database or run migrations as a build command.
+Do not modify production secrets, reset the database or delete existing data.
+Do not reinitialize Supabase or run migrations as a build/startup command.
+Do not create synthetic data in real storage without separate approval.
+If a Preview is exceptionally requested, keep its protection enabled and use
+automation credentials only on its exact origin, never in global headers.
 
 ## 6. Automated verification
 
@@ -144,8 +151,8 @@ pnpm run check:deployment
 The migration validator refuses remote/production endpoints and uses a disposable
 database. If the workspace development database is remote, start a separate local
 PostgreSQL cluster and override `DATABASE_URL` only for this command. Never weaken
-its local/Docker evidence checks or point it at Supabase. Live Supabase auth and
-browser tests still require the real configured owner and Preview deployment.
+its local/Docker evidence checks or point it at Supabase. Signed-in live browser
+checks require the real configured owner; a passing local test is not a live session.
 
 ## Daily calendar reflections: additive migration
 
@@ -157,13 +164,13 @@ they are independent of account, strategy and trade filters.
 The owner-approved migration has been applied to the existing Supabase project.
 Verified TLS, migration hashes, the new table and its restrictions all passed.
 Before-and-after row fingerprints matched for all eight existing tables, and
-the notes table remained empty. The application changes have not been pushed
-or deployed; Preview validation and publishing remain separate approval steps.
+the notes table remained empty at that verification. Database approval and
+application publishing are separate operations; use the current workflow in section 5.
 
 - **Do not run `initialize:external` on an existing Supabase project.**
 - Applying migrations to Supabase and publishing the app require separate
   explicit approval. Approval of the table migration does not authorize an app
-  deployment; the deployed application remains unchanged.
+  deployment.
 - Before an approved upgrade, verify the Session pooler target project and TLS,
   inspect the existing Drizzle journal, and confirm the first migration is
   already recorded and that `edge_day_notes` does not already exist.
@@ -176,7 +183,7 @@ or deployed; Preview validation and publishing remain separate approval steps.
   the API derives ownership from the verified session, never the request body.
 - After applying, verify the ninth table, RLS, revoked privileges, migration
   journal, and unchanged existing table row counts. Validate saving/editing/
-  removing a synthetic note in Preview before any approved Production push.
+  removing notes on a disposable local database; real-storage fixtures need approval.
 
 `validate:migrations` checks both fresh initialization and the additive upgrade
 on a disposable local database, including preservation of an existing account.
@@ -219,9 +226,11 @@ connection string or environment setting was changed. Do not silently point
 development at Supabase or migrate its schema. Obtain separate approval if
 development storage should also be enabled.
 
-No GitHub push or Vercel deployment was performed. Storage approval is not
-deployment approval; a Vercel Preview using Supabase is the next validation step.
-Do not rerun this migration blindly: first inspect the now-updated journal.
+Storage approval was separate from deployment approval. The feature was later
+pushed to `preview/prop-firm-manager` under the former Preview-first workflow.
+The owner now requests the validated changes on `main` and automatic Vercel
+Production deployment. No new storage migration is implied by that push.
+Do not rerun the applied migration: first inspect the now-updated journal.
 
 Procedure used for the approved Supabase activation:
 
@@ -247,10 +256,9 @@ Procedure used for the approved Supabase activation:
 5. Verify all 16 tables, all three migration entries and hashes, all seven empty
    new tables, RLS, zero direct API-role privileges and unchanged existing-table
    counts/fingerprints. Do not create synthetic rows in real user storage unless
-   separately approved for Preview validation.
-6. Request separate permission for a feature-branch Vercel Preview deployment
-   and signed-in CRUD validation. Keep Preview protection enabled. **Do not push
-   `main`**, which automatically publishes Production.
+    separately approved for real-storage validation.
+6. Deploy the application using the current direct-to-main workflow in section 5,
+   independently of database migration approval.
 
 ### Financial and historical semantics
 
