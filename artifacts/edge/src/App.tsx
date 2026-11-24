@@ -22,6 +22,7 @@ import Psychology from "@/pages/psychology";
 import CalendarPage from "@/pages/calendar";
 import Playbook from "@/pages/playbook";
 import SettingsPage from "@/pages/settings";
+import PropManager from "@/pages/prop-manager";
 import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false, retry: 1 } } });
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
@@ -38,7 +39,7 @@ export default function App() {
           <Route path="/trades/:id" component={TradeDetail} /><Route path="/confluences" component={Confluences} />
           <Route path="/strategies" component={Strategies} /><Route path="/performance" component={Performance} />
           <Route path="/risk" component={Risk} /><Route path="/psychology" component={Psychology} />
-          <Route path="/calendar" component={CalendarPage} /><Route path="/playbook" component={Playbook} />
+          <Route path="/calendar" component={CalendarPage} /><Route path="/prop-manager" component={PropManager} /><Route path="/playbook" component={Playbook} />
           <Route path="/settings" component={SettingsPage} /><Route path="/sign-in" component={Overview} />
           <Route component={NotFound} />
         </Switch>

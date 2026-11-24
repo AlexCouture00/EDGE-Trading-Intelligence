@@ -8,6 +8,60 @@ servers:
 security:
   - PersonalBearer: []
 paths:
+  /edge/prop-manager:
+    get:
+      operationId: getPropManager
+      responses:
+        "200":
+          description: Private persisted prop firm portfolio. Monetary totals are never combined across currencies.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropPortfolio" }
+        "503": { description: Prop manager migration has not been applied }
+  /edge/prop-manager/{kind}:
+    parameters:
+      - $ref: "#/components/parameters/PropKind"
+    post:
+      operationId: createPropRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PropRecordInput" }
+      responses:
+        "201":
+          description: Created; refetch the portfolio for recalculated totals
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropSaved" }
+        "400": { description: Invalid attributes }
+        "404": { description: Related record not found for the current owner }
+  /edge/prop-manager/{kind}/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PropKind"
+      - $ref: "#/components/parameters/Id"
+    put:
+      operationId: updatePropRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PropRecordInput" }
+      responses:
+        "200":
+          description: Updated; balance snapshots are append-only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropSaved" }
+        "400": { description: Invalid attributes }
+        "404": { description: Not found for current owner }
+        "409": { description: Historical identity cannot be rewritten }
+    delete:
+      operationId: deletePropRecord
+      responses:
+        "204": { description: "Expense, payout or rule removed" }
+        "404": { description: Not found for current owner }
+        "409": { description: Archive firms and accounts; retain balance and challenge histories }
   /edge/day-notes:
     get:
       operationId: listDayNotes
@@ -337,6 +391,11 @@ components:
       scheme: bearer
       bearerFormat: Supabase JWT
   parameters:
+    PropKind:
+      name: kind
+      in: path
+      required: true
+      schema: { type: string, enum: [firms, accounts, balances, challenges, rules, expenses, payouts] }
     Demo: { name: demo, in: query, schema: { type: boolean }, description: Read-only isolated example dataset }
     Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     AccountId: { name: accountId, in: query, schema: { type: string } }
@@ -346,6 +405,181 @@ components:
     StrategyId: { name: strategyId, in: query, schema: { type: string } }
     Direction: { name: direction, in: query, schema: { type: string, enum: [long, short] } }
   schemas:
+    PropMoney:
+      type: string
+      pattern: '^-?\d{1,16}(\.\d{1,8})?$'
+      description: Exact decimal amount, never a binary floating point monetary input.
+    PropDay:
+      type: string
+      pattern: '^\d{4}-\d{2}-\d{2}$'
+    PropSaved:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string, format: uuid }
+    PropFirmInput:
+      type: object
+      additionalProperties: false
+      required: [name, website, marketType, platform, notes, status]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 150 }
+        website: { type: string, maxLength: 1000 }
+        marketType: { type: string, enum: [CFD, Futures, Perpetuals] }
+        platform: { type: string, maxLength: 150 }
+        notes: { type: string, maxLength: 10000 }
+        status: { type: string, enum: [active, archived] }
+    PropAccountInput:
+      type: object
+      additionalProperties: false
+      required: [firmId, name, reference, marketType, platform, currency, nominalSize, startingBalance, purchasedOn, status, phase, journalAccountId, notes]
+      properties:
+        firmId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 150 }
+        reference: { type: string, maxLength: 150 }
+        marketType: { type: string, enum: [CFD, Futures, Perpetuals] }
+        platform: { type: string, maxLength: 150 }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        nominalSize: { $ref: "#/components/schemas/PropMoney" }
+        startingBalance: { $ref: "#/components/schemas/PropMoney" }
+        purchasedOn: { $ref: "#/components/schemas/PropDay" }
+        status: { type: string, enum: [not_started, evaluation, funded, passed, failed, expired, closed, archived] }
+        phase: { type: string, maxLength: 150, description: Phase is separate from account lifecycle and payout status. }
+        journalAccountId: { type: [string, "null"], format: uuid }
+        notes: { type: string, maxLength: 10000 }
+    PropBalanceInput:
+      type: object
+      additionalProperties: false
+      required: [accountId, balance, equity, note]
+      properties:
+        accountId: { type: string, format: uuid }
+        balance: { $ref: "#/components/schemas/PropMoney" }
+        equity: { type: [string, "null"], pattern: '^-?\d{1,16}(\.\d{1,8})?$' }
+        note: { type: string, maxLength: 10000 }
+    PropChallengeInput:
+      type: object
+      additionalProperties: false
+      required: [accountId, name, structure, phase, startingBalance, profitTarget, maximumLoss, dailyLoss, minimumDays, completedDays, startDate, expiresOn, status, notes]
+      properties:
+        accountId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 150 }
+        structure: { type: string, enum: [one_step, two_step, multi_step, instant_funded, custom] }
+        phase: { type: string, minLength: 1, maxLength: 150 }
+        startingBalance: { $ref: "#/components/schemas/PropMoney" }
+        profitTarget: { $ref: "#/components/schemas/PropMoney" }
+        maximumLoss: { $ref: "#/components/schemas/PropMoney" }
+        dailyLoss: { type: [string, "null"], pattern: '^\d{1,16}(\.\d{1,8})?$' }
+        minimumDays: { type: integer, minimum: 0, maximum: 100000 }
+        completedDays: { type: integer, minimum: 0, maximum: 100000, description: Manually confirmed trading days; never inferred from balance snapshots. }
+        startDate: { $ref: "#/components/schemas/PropDay" }
+        expiresOn: { type: [string, "null"], pattern: '^\d{4}-\d{2}-\d{2}$' }
+        status: { type: string, enum: [not_started, active, passed, failed, expired] }
+        notes: { type: string, maxLength: 10000 }
+    PropRuleInput:
+      type: object
+      additionalProperties: false
+      required: [accountId, name, category, value, unit, method, explanation, effectiveDate, sourceUrl, verifiedOn, notes, confirmed]
+      properties:
+        accountId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 150 }
+        category: { type: string, enum: [risk, trading, payout] }
+        value: { type: string, minLength: 1, maxLength: 2000 }
+        unit: { type: string, maxLength: 100 }
+        method:
+          type: string
+          enum: [static_balance_loss, trailing_balance_loss, daily_loss, eod_trailing, intraday_trailing, equity_loss, max_position_size, max_contract_size, news, weekend, overnight, minimum_days, maximum_days, consistency, maximum_daily_profit, restricted_instruments, restricted_hours, minimum_payout, profit_split, payout_frequency, minimum_profitable_days, payout_eligibility, payout_cap, buffer, custom]
+        explanation: { type: string, maxLength: 10000 }
+        effectiveDate: { $ref: "#/components/schemas/PropDay" }
+        sourceUrl: { type: string, maxLength: 1000 }
+        verifiedOn: { type: [string, "null"], pattern: '^\d{4}-\d{2}-\d{2}$' }
+        notes: { type: string, maxLength: 10000 }
+        confirmed: { type: boolean }
+    PropExpenseInput:
+      type: object
+      additionalProperties: false
+      required: [firmId, accountId, category, amount, currency, date, notes]
+      properties:
+        firmId: { type: string, format: uuid }
+        accountId: { type: [string, "null"], format: uuid }
+        category: { type: string, enum: [challenge_purchase, challenge_reset, activation, subscription, platform, data, withdrawal, other] }
+        amount: { $ref: "#/components/schemas/PropMoney" }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        date: { $ref: "#/components/schemas/PropDay" }
+        notes: { type: string, maxLength: 10000 }
+    PropPayoutInput:
+      type: object
+      additionalProperties: false
+      required: [accountId, grossProfit, profitSplit, requestedAmount, netReceived, currency, requestedOn, paidOn, status, processingFee, notes]
+      properties:
+        accountId: { type: string, format: uuid }
+        grossProfit: { type: [string, "null"], pattern: '^\d{1,16}(\.\d{1,8})?$' }
+        profitSplit: { type: [string, "null"], pattern: '^\d{1,3}(\.\d{1,4})?$' }
+        requestedAmount: { $ref: "#/components/schemas/PropMoney" }
+        netReceived: { $ref: "#/components/schemas/PropMoney" }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        requestedOn: { $ref: "#/components/schemas/PropDay" }
+        paidOn: { type: [string, "null"], pattern: '^\d{4}-\d{2}-\d{2}$' }
+        status: { type: string, enum: [requested, approved, paid, rejected, cancelled] }
+        processingFee: { $ref: "#/components/schemas/PropMoney" }
+        notes: { type: string, maxLength: 10000 }
+    PropRecordInput:
+      oneOf:
+        - { $ref: "#/components/schemas/PropFirmInput" }
+        - { $ref: "#/components/schemas/PropAccountInput" }
+        - { $ref: "#/components/schemas/PropBalanceInput" }
+        - { $ref: "#/components/schemas/PropChallengeInput" }
+        - { $ref: "#/components/schemas/PropRuleInput" }
+        - { $ref: "#/components/schemas/PropExpenseInput" }
+        - { $ref: "#/components/schemas/PropPayoutInput" }
+    PropFirm:
+      allOf:
+        - { $ref: "#/components/schemas/PropFirmInput" }
+        - { $ref: "#/components/schemas/PropSaved" }
+    PropAccount:
+      allOf:
+        - { $ref: "#/components/schemas/PropAccountInput" }
+        - { $ref: "#/components/schemas/PropSaved" }
+    PropBalance:
+      allOf:
+        - { $ref: "#/components/schemas/PropBalanceInput" }
+        - type: object
+          required: [id, previousBalance, difference, createdAt]
+          properties:
+            id: { type: string, format: uuid }
+            previousBalance: { $ref: "#/components/schemas/PropMoney" }
+            difference: { type: string, pattern: '^-?\d{1,17}(\.\d{1,8})?$' }
+            createdAt: { type: string }
+    PropChallenge:
+      allOf:
+        - { $ref: "#/components/schemas/PropChallengeInput" }
+        - { $ref: "#/components/schemas/PropSaved" }
+        - type: object
+          required: [closingBalance, completedAt]
+          properties:
+            closingBalance: { type: [string, "null"] }
+            completedAt: { type: [string, "null"] }
+    PropRule:
+      allOf:
+        - { $ref: "#/components/schemas/PropRuleInput" }
+        - { $ref: "#/components/schemas/PropSaved" }
+    PropExpense:
+      allOf:
+        - { $ref: "#/components/schemas/PropExpenseInput" }
+        - { $ref: "#/components/schemas/PropSaved" }
+    PropPayout:
+      allOf:
+        - { $ref: "#/components/schemas/PropPayoutInput" }
+        - { $ref: "#/components/schemas/PropSaved" }
+    PropPortfolio:
+      type: object
+      required: [firms, accounts, balances, challenges, rules, expenses, payouts]
+      properties:
+        firms: { type: array, items: { $ref: "#/components/schemas/PropFirm" } }
+        accounts: { type: array, items: { $ref: "#/components/schemas/PropAccount" } }
+        balances: { type: array, items: { $ref: "#/components/schemas/PropBalance" } }
+        challenges: { type: array, items: { $ref: "#/components/schemas/PropChallenge" } }
+        rules: { type: array, items: { $ref: "#/components/schemas/PropRule" } }
+        expenses: { type: array, items: { $ref: "#/components/schemas/PropExpense" } }
+        payouts: { type: array, items: { $ref: "#/components/schemas/PropPayout" } }
     DayNoteInput:
       type: object
       required: [wentWell, wentBadly]

@@ -5,6 +5,357 @@
  * EDGE Trading Intelligence
  * OpenAPI spec version: 0.1.0
  */
+/**
+ * Exact decimal amount, never a binary floating point monetary input.
+ * @pattern ^-?\d{1,16}(\.\d{1,8})?$
+ */
+export type PropMoney = string;
+
+/**
+ * @pattern ^\d{4}-\d{2}-\d{2}$
+ */
+export type PropDay = string;
+
+export interface PropSaved {
+  id: string;
+}
+
+export type PropFirmInputMarketType = typeof PropFirmInputMarketType[keyof typeof PropFirmInputMarketType];
+
+
+export const PropFirmInputMarketType = {
+  CFD: 'CFD',
+  Futures: 'Futures',
+  Perpetuals: 'Perpetuals',
+} as const;
+
+export type PropFirmInputStatus = typeof PropFirmInputStatus[keyof typeof PropFirmInputStatus];
+
+
+export const PropFirmInputStatus = {
+  active: 'active',
+  archived: 'archived',
+} as const;
+
+export interface PropFirmInput {
+  /**
+     * @minLength 1
+     * @maxLength 150
+     */
+  name: string;
+  /** @maxLength 1000 */
+  website: string;
+  marketType: PropFirmInputMarketType;
+  /** @maxLength 150 */
+  platform: string;
+  /** @maxLength 10000 */
+  notes: string;
+  status: PropFirmInputStatus;
+}
+
+export type PropAccountInputMarketType = typeof PropAccountInputMarketType[keyof typeof PropAccountInputMarketType];
+
+
+export const PropAccountInputMarketType = {
+  CFD: 'CFD',
+  Futures: 'Futures',
+  Perpetuals: 'Perpetuals',
+} as const;
+
+export type PropAccountInputStatus = typeof PropAccountInputStatus[keyof typeof PropAccountInputStatus];
+
+
+export const PropAccountInputStatus = {
+  not_started: 'not_started',
+  evaluation: 'evaluation',
+  funded: 'funded',
+  passed: 'passed',
+  failed: 'failed',
+  expired: 'expired',
+  closed: 'closed',
+  archived: 'archived',
+} as const;
+
+export interface PropAccountInput {
+  firmId: string;
+  /**
+     * @minLength 1
+     * @maxLength 150
+     */
+  name: string;
+  /** @maxLength 150 */
+  reference: string;
+  marketType: PropAccountInputMarketType;
+  /** @maxLength 150 */
+  platform: string;
+  /** @pattern ^[A-Z]{3}$ */
+  currency: string;
+  nominalSize: PropMoney;
+  startingBalance: PropMoney;
+  purchasedOn: PropDay;
+  status: PropAccountInputStatus;
+  /**
+     * Phase is separate from account lifecycle and payout status.
+     * @maxLength 150
+     */
+  phase: string;
+  /** @nullable */
+  journalAccountId: string | null;
+  /** @maxLength 10000 */
+  notes: string;
+}
+
+export interface PropBalanceInput {
+  accountId: string;
+  balance: PropMoney;
+  /**
+     * @nullable
+     * @pattern ^-?\d{1,16}(\.\d{1,8})?$
+     */
+  equity: string | null;
+  /** @maxLength 10000 */
+  note: string;
+}
+
+export type PropChallengeInputStructure = typeof PropChallengeInputStructure[keyof typeof PropChallengeInputStructure];
+
+
+export const PropChallengeInputStructure = {
+  one_step: 'one_step',
+  two_step: 'two_step',
+  multi_step: 'multi_step',
+  instant_funded: 'instant_funded',
+  custom: 'custom',
+} as const;
+
+export type PropChallengeInputStatus = typeof PropChallengeInputStatus[keyof typeof PropChallengeInputStatus];
+
+
+export const PropChallengeInputStatus = {
+  not_started: 'not_started',
+  active: 'active',
+  passed: 'passed',
+  failed: 'failed',
+  expired: 'expired',
+} as const;
+
+export interface PropChallengeInput {
+  accountId: string;
+  /**
+     * @minLength 1
+     * @maxLength 150
+     */
+  name: string;
+  structure: PropChallengeInputStructure;
+  /**
+     * @minLength 1
+     * @maxLength 150
+     */
+  phase: string;
+  startingBalance: PropMoney;
+  profitTarget: PropMoney;
+  maximumLoss: PropMoney;
+  /**
+     * @nullable
+     * @pattern ^\d{1,16}(\.\d{1,8})?$
+     */
+  dailyLoss: string | null;
+  /**
+     * @minimum 0
+     * @maximum 100000
+     */
+  minimumDays: number;
+  /**
+     * Manually confirmed trading days; never inferred from balance snapshots.
+     * @minimum 0
+     * @maximum 100000
+     */
+  completedDays: number;
+  startDate: PropDay;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  expiresOn: string | null;
+  status: PropChallengeInputStatus;
+  /** @maxLength 10000 */
+  notes: string;
+}
+
+export type PropRuleInputCategory = typeof PropRuleInputCategory[keyof typeof PropRuleInputCategory];
+
+
+export const PropRuleInputCategory = {
+  risk: 'risk',
+  trading: 'trading',
+  payout: 'payout',
+} as const;
+
+export type PropRuleInputMethod = typeof PropRuleInputMethod[keyof typeof PropRuleInputMethod];
+
+
+export const PropRuleInputMethod = {
+  static_balance_loss: 'static_balance_loss',
+  trailing_balance_loss: 'trailing_balance_loss',
+  daily_loss: 'daily_loss',
+  eod_trailing: 'eod_trailing',
+  intraday_trailing: 'intraday_trailing',
+  equity_loss: 'equity_loss',
+  max_position_size: 'max_position_size',
+  max_contract_size: 'max_contract_size',
+  news: 'news',
+  weekend: 'weekend',
+  overnight: 'overnight',
+  minimum_days: 'minimum_days',
+  maximum_days: 'maximum_days',
+  consistency: 'consistency',
+  maximum_daily_profit: 'maximum_daily_profit',
+  restricted_instruments: 'restricted_instruments',
+  restricted_hours: 'restricted_hours',
+  minimum_payout: 'minimum_payout',
+  profit_split: 'profit_split',
+  payout_frequency: 'payout_frequency',
+  minimum_profitable_days: 'minimum_profitable_days',
+  payout_eligibility: 'payout_eligibility',
+  payout_cap: 'payout_cap',
+  buffer: 'buffer',
+  custom: 'custom',
+} as const;
+
+export interface PropRuleInput {
+  accountId: string;
+  /**
+     * @minLength 1
+     * @maxLength 150
+     */
+  name: string;
+  category: PropRuleInputCategory;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  value: string;
+  /** @maxLength 100 */
+  unit: string;
+  method: PropRuleInputMethod;
+  /** @maxLength 10000 */
+  explanation: string;
+  effectiveDate: PropDay;
+  /** @maxLength 1000 */
+  sourceUrl: string;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  verifiedOn: string | null;
+  /** @maxLength 10000 */
+  notes: string;
+  confirmed: boolean;
+}
+
+export type PropExpenseInputCategory = typeof PropExpenseInputCategory[keyof typeof PropExpenseInputCategory];
+
+
+export const PropExpenseInputCategory = {
+  challenge_purchase: 'challenge_purchase',
+  challenge_reset: 'challenge_reset',
+  activation: 'activation',
+  subscription: 'subscription',
+  platform: 'platform',
+  data: 'data',
+  withdrawal: 'withdrawal',
+  other: 'other',
+} as const;
+
+export interface PropExpenseInput {
+  firmId: string;
+  /** @nullable */
+  accountId: string | null;
+  category: PropExpenseInputCategory;
+  amount: PropMoney;
+  /** @pattern ^[A-Z]{3}$ */
+  currency: string;
+  date: PropDay;
+  /** @maxLength 10000 */
+  notes: string;
+}
+
+export type PropPayoutInputStatus = typeof PropPayoutInputStatus[keyof typeof PropPayoutInputStatus];
+
+
+export const PropPayoutInputStatus = {
+  requested: 'requested',
+  approved: 'approved',
+  paid: 'paid',
+  rejected: 'rejected',
+  cancelled: 'cancelled',
+} as const;
+
+export interface PropPayoutInput {
+  accountId: string;
+  /**
+     * @nullable
+     * @pattern ^\d{1,16}(\.\d{1,8})?$
+     */
+  grossProfit: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,3}(\.\d{1,4})?$
+     */
+  profitSplit: string | null;
+  requestedAmount: PropMoney;
+  netReceived: PropMoney;
+  /** @pattern ^[A-Z]{3}$ */
+  currency: string;
+  requestedOn: PropDay;
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  paidOn: string | null;
+  status: PropPayoutInputStatus;
+  processingFee: PropMoney;
+  /** @maxLength 10000 */
+  notes: string;
+}
+
+export type PropRecordInput = PropFirmInput | PropAccountInput | PropBalanceInput | PropChallengeInput | PropRuleInput | PropExpenseInput | PropPayoutInput;
+
+export type PropFirm = PropFirmInput & PropSaved;
+
+export type PropAccount = PropAccountInput & PropSaved;
+
+export type PropBalance = PropBalanceInput & {
+  id: string;
+  previousBalance: PropMoney;
+  /** @pattern ^-?\d{1,17}(\.\d{1,8})?$ */
+  difference: string;
+  createdAt: string;
+};
+
+export type PropChallenge = PropChallengeInput & PropSaved & ({
+  /** @nullable */
+  closingBalance: string | null;
+  /** @nullable */
+  completedAt: string | null;
+});
+
+export type PropRule = PropRuleInput & PropSaved;
+
+export type PropExpense = PropExpenseInput & PropSaved;
+
+export type PropPayout = PropPayoutInput & PropSaved;
+
+export interface PropPortfolio {
+  firms: PropFirm[];
+  accounts: PropAccount[];
+  balances: PropBalance[];
+  challenges: PropChallenge[];
+  rules: PropRule[];
+  expenses: PropExpense[];
+  payouts: PropPayout[];
+}
+
 export interface DayNoteInput {
   /** @maxLength 10000 */
   wentWell: string;

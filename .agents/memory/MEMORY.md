@@ -3,3 +3,4 @@
 - [External deployment validation](external-deployment-validation.md) — Local socket URLs need actual server-address checks; Vercel's schema can mix JSON Schema drafts.
 - [Certificate diagnostics](certificate-diagnostics.md) — Flattened PEM can contain a valid CA; diagnose formatting and DER separately without exposing input.
 - [Protected Preview testing](protected-preview-testing.md) — Keep bypass credentials origin-scoped; hosted auth checks require real external sessions.
+- [Prop firm accounting](prop-firm-accounting.md) — Allocations are not personal assets; cash, snapshots and confirmed rule compliance stay distinct.

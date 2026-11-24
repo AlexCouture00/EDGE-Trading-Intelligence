@@ -9,7 +9,9 @@ BEGIN
   FOREACH edge_table IN ARRAY ARRAY[
     'edge_accounts', 'edge_cash_flows', 'edge_settings', 'edge_confluences',
     'edge_strategies', 'edge_trades', 'edge_executions', 'edge_trade_confluences',
-    'edge_day_notes'
+    'edge_day_notes',
+    'edge_prop_firms', 'edge_prop_accounts', 'edge_prop_balances', 'edge_prop_challenges',
+    'edge_prop_rules', 'edge_prop_expenses', 'edge_prop_payouts'
   ]
   LOOP
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', edge_table);

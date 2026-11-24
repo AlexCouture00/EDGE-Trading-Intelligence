@@ -113,7 +113,7 @@ async function main() {
         assert.equal(result.rows[0].n, 0);
       }
       const constraints = await client.query("SELECT count(*)::int AS n FROM pg_constraint WHERE contype='f' AND connamespace='public'::regnamespace");
-      assert.equal(constraints.rows[0].n, 6);
+      assert.equal(constraints.rows[0].n, 14);
       const journal = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
       const expected = JSON.parse(readFileSync(new URL("../drizzle/meta/_journal.json", import.meta.url), "utf8")).entries.length;
       assert.equal(journal.rows[0].n, expected);
@@ -124,9 +124,11 @@ async function main() {
       stage = "checking additive upgrade preserves existing journal data";
       // Simulate the already-initialized release in this disposable database.
       // Never downgrade or run this fixture setup on the real Supabase project.
-      const noteMigration = await client.query("SELECT id FROM drizzle.__drizzle_migrations ORDER BY created_at DESC LIMIT 1");
-      await client.query("DROP TABLE public.edge_day_notes");
-      await client.query("DELETE FROM drizzle.__drizzle_migrations WHERE id=$1", [noteMigration.rows[0].id]);
+      const pendingMigration = await client.query("SELECT id FROM drizzle.__drizzle_migrations ORDER BY created_at DESC LIMIT 1");
+      for (const table of ["edge_prop_balances", "edge_prop_challenges", "edge_prop_rules", "edge_prop_expenses", "edge_prop_payouts", "edge_prop_accounts", "edge_prop_firms"]) {
+        await client.query(`DROP TABLE public.${table}`);
+      }
+      await client.query("DELETE FROM drizzle.__drizzle_migrations WHERE id=$1", [pendingMigration.rows[0].id]);
       const canary = await client.query(
         `INSERT INTO public.edge_accounts(owner_id,name,currency,initial_balance,type)
          VALUES ('migration-upgrade-fixture','Preserve existing account','USD','1234.56','backtesting') RETURNING *`,
@@ -141,6 +143,18 @@ async function main() {
       );
       assert.equal(notesSecurity.rows[0].relrowsecurity, true);
       assert.equal(notesSecurity.rows[0].no_public_grants, true);
+      for (const table of edgeTables.filter(name => name.startsWith("edge_prop_"))) {
+        const security = await client.query(
+          `SELECT relrowsecurity, NOT EXISTS (
+             SELECT 1 FROM aclexplode(COALESCE(relacl, acldefault('r',relowner))) a
+             LEFT JOIN pg_roles r ON r.oid=a.grantee
+             WHERE a.grantee=0 OR r.rolname IN ('anon','authenticated')
+           ) AS direct_access_revoked
+           FROM pg_class WHERE oid=$1::regclass`, [`public.${table}`],
+        );
+        assert.equal(security.rows[0].relrowsecurity, true);
+        assert.equal(security.rows[0].direct_access_revoked, true);
+      }
       const upgradeJournal = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
       assert.equal(upgradeJournal.rows[0].n, expected);
       await client.query("DELETE FROM public.edge_accounts WHERE id=$1", [canary.rows[0].id]);
@@ -152,7 +166,7 @@ async function main() {
       stdio: "inherit",
     });
     assert.equal(result.status, 0, "API tests against isolated migrated database failed");
-    process.stdout.write(`Migration validation passed: ${edgeTables.length} tables, 6 foreign keys, RLS, empty data, journal, repeat safety, additive upgrade preservation and API tests.\n`);
+    process.stdout.write(`Migration validation passed: ${edgeTables.length} tables, 14 foreign keys, RLS, empty data, journal, repeat safety, additive upgrade preservation and API tests.\n`);
   } catch (error) {
     reportFailure(stage, error);
     process.exitCode = 1;

@@ -8,6 +8,517 @@
 import * as zod from 'zod';
 
 
+export const getPropManagerResponseFirmsItemOneNameMax = 150;
+
+export const getPropManagerResponseFirmsItemOneWebsiteMax = 1000;
+
+export const getPropManagerResponseFirmsItemOnePlatformMax = 150;
+
+export const getPropManagerResponseFirmsItemOneNotesMax = 10000;
+
+export const getPropManagerResponseAccountsItemOneNameMax = 150;
+
+export const getPropManagerResponseAccountsItemOneReferenceMax = 150;
+
+export const getPropManagerResponseAccountsItemOnePlatformMax = 150;
+
+export const getPropManagerResponseAccountsItemOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const getPropManagerResponseAccountsItemOneNominalSizeRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseAccountsItemOneStartingBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseAccountsItemOnePurchasedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getPropManagerResponseAccountsItemOnePhaseMax = 150;
+
+export const getPropManagerResponseAccountsItemOneNotesMax = 10000;
+
+export const getPropManagerResponseBalancesItemOneBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseBalancesItemOneEquityRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseBalancesItemOneNoteMax = 10000;
+
+export const getPropManagerResponseBalancesItemTwoPreviousBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseBalancesItemTwoDifferenceRegExp = new RegExp('^-?\\d{1,17}(\\.\\d{1,8})?$');
+export const getPropManagerResponseChallengesItemOneNameMax = 150;
+
+export const getPropManagerResponseChallengesItemOnePhaseMax = 150;
+
+export const getPropManagerResponseChallengesItemOneStartingBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseChallengesItemOneProfitTargetRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseChallengesItemOneMaximumLossRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseChallengesItemOneDailyLossRegExp = new RegExp('^\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseChallengesItemOneMinimumDaysMin = 0;
+export const getPropManagerResponseChallengesItemOneMinimumDaysMax = 100000;
+
+export const getPropManagerResponseChallengesItemOneCompletedDaysMin = 0;
+export const getPropManagerResponseChallengesItemOneCompletedDaysMax = 100000;
+
+export const getPropManagerResponseChallengesItemOneStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getPropManagerResponseChallengesItemOneExpiresOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getPropManagerResponseChallengesItemOneNotesMax = 10000;
+
+export const getPropManagerResponseRulesItemOneNameMax = 150;
+
+export const getPropManagerResponseRulesItemOneValueMax = 2000;
+
+export const getPropManagerResponseRulesItemOneUnitMax = 100;
+
+export const getPropManagerResponseRulesItemOneExplanationMax = 10000;
+
+export const getPropManagerResponseRulesItemOneEffectiveDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getPropManagerResponseRulesItemOneSourceUrlMax = 1000;
+
+export const getPropManagerResponseRulesItemOneVerifiedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getPropManagerResponseRulesItemOneNotesMax = 10000;
+
+export const getPropManagerResponseExpensesItemOneAmountRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponseExpensesItemOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const getPropManagerResponseExpensesItemOneDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getPropManagerResponseExpensesItemOneNotesMax = 10000;
+
+export const getPropManagerResponsePayoutsItemOneGrossProfitRegExp = new RegExp('^\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponsePayoutsItemOneProfitSplitRegExp = new RegExp('^\\d{1,3}(\\.\\d{1,4})?$');
+export const getPropManagerResponsePayoutsItemOneRequestedAmountRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponsePayoutsItemOneNetReceivedRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponsePayoutsItemOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const getPropManagerResponsePayoutsItemOneRequestedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getPropManagerResponsePayoutsItemOnePaidOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getPropManagerResponsePayoutsItemOneProcessingFeeRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const getPropManagerResponsePayoutsItemOneNotesMax = 10000;
+
+
+
+export const GetPropManagerResponse = zod.object({
+  "firms": zod.array(zod.object({
+  "name": zod.string().min(1).max(getPropManagerResponseFirmsItemOneNameMax),
+  "website": zod.string().max(getPropManagerResponseFirmsItemOneWebsiteMax),
+  "marketType": zod.enum(['CFD', 'Futures', 'Perpetuals']),
+  "platform": zod.string().max(getPropManagerResponseFirmsItemOnePlatformMax),
+  "notes": zod.string().max(getPropManagerResponseFirmsItemOneNotesMax),
+  "status": zod.enum(['active', 'archived'])
+}).and(zod.object({
+  "id": zod.string().uuid()
+}))),
+  "accounts": zod.array(zod.object({
+  "firmId": zod.string().uuid(),
+  "name": zod.string().min(1).max(getPropManagerResponseAccountsItemOneNameMax),
+  "reference": zod.string().max(getPropManagerResponseAccountsItemOneReferenceMax),
+  "marketType": zod.enum(['CFD', 'Futures', 'Perpetuals']),
+  "platform": zod.string().max(getPropManagerResponseAccountsItemOnePlatformMax),
+  "currency": zod.string().regex(getPropManagerResponseAccountsItemOneCurrencyRegExp),
+  "nominalSize": zod.string().regex(getPropManagerResponseAccountsItemOneNominalSizeRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "startingBalance": zod.string().regex(getPropManagerResponseAccountsItemOneStartingBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "purchasedOn": zod.string().regex(getPropManagerResponseAccountsItemOnePurchasedOnRegExp),
+  "status": zod.enum(['not_started', 'evaluation', 'funded', 'passed', 'failed', 'expired', 'closed', 'archived']),
+  "phase": zod.string().max(getPropManagerResponseAccountsItemOnePhaseMax).describe('Phase is separate from account lifecycle and payout status.'),
+  "journalAccountId": zod.string().uuid().nullable(),
+  "notes": zod.string().max(getPropManagerResponseAccountsItemOneNotesMax)
+}).and(zod.object({
+  "id": zod.string().uuid()
+}))),
+  "balances": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "balance": zod.string().regex(getPropManagerResponseBalancesItemOneBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "equity": zod.string().regex(getPropManagerResponseBalancesItemOneEquityRegExp).nullable(),
+  "note": zod.string().max(getPropManagerResponseBalancesItemOneNoteMax)
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "previousBalance": zod.string().regex(getPropManagerResponseBalancesItemTwoPreviousBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "difference": zod.string().regex(getPropManagerResponseBalancesItemTwoDifferenceRegExp),
+  "createdAt": zod.string()
+}))),
+  "challenges": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "name": zod.string().min(1).max(getPropManagerResponseChallengesItemOneNameMax),
+  "structure": zod.enum(['one_step', 'two_step', 'multi_step', 'instant_funded', 'custom']),
+  "phase": zod.string().min(1).max(getPropManagerResponseChallengesItemOnePhaseMax),
+  "startingBalance": zod.string().regex(getPropManagerResponseChallengesItemOneStartingBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "profitTarget": zod.string().regex(getPropManagerResponseChallengesItemOneProfitTargetRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "maximumLoss": zod.string().regex(getPropManagerResponseChallengesItemOneMaximumLossRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "dailyLoss": zod.string().regex(getPropManagerResponseChallengesItemOneDailyLossRegExp).nullable(),
+  "minimumDays": zod.number().int().min(getPropManagerResponseChallengesItemOneMinimumDaysMin).max(getPropManagerResponseChallengesItemOneMinimumDaysMax),
+  "completedDays": zod.number().int().min(getPropManagerResponseChallengesItemOneCompletedDaysMin).max(getPropManagerResponseChallengesItemOneCompletedDaysMax).describe('Manually confirmed trading days; never inferred from balance snapshots.'),
+  "startDate": zod.string().regex(getPropManagerResponseChallengesItemOneStartDateRegExp),
+  "expiresOn": zod.string().regex(getPropManagerResponseChallengesItemOneExpiresOnRegExp).nullable(),
+  "status": zod.enum(['not_started', 'active', 'passed', 'failed', 'expired']),
+  "notes": zod.string().max(getPropManagerResponseChallengesItemOneNotesMax)
+}).and(zod.object({
+  "id": zod.string().uuid()
+})).and(zod.object({
+  "closingBalance": zod.string().nullable(),
+  "completedAt": zod.string().nullable()
+}))),
+  "rules": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "name": zod.string().min(1).max(getPropManagerResponseRulesItemOneNameMax),
+  "category": zod.enum(['risk', 'trading', 'payout']),
+  "value": zod.string().min(1).max(getPropManagerResponseRulesItemOneValueMax),
+  "unit": zod.string().max(getPropManagerResponseRulesItemOneUnitMax),
+  "method": zod.enum(['static_balance_loss', 'trailing_balance_loss', 'daily_loss', 'eod_trailing', 'intraday_trailing', 'equity_loss', 'max_position_size', 'max_contract_size', 'news', 'weekend', 'overnight', 'minimum_days', 'maximum_days', 'consistency', 'maximum_daily_profit', 'restricted_instruments', 'restricted_hours', 'minimum_payout', 'profit_split', 'payout_frequency', 'minimum_profitable_days', 'payout_eligibility', 'payout_cap', 'buffer', 'custom']),
+  "explanation": zod.string().max(getPropManagerResponseRulesItemOneExplanationMax),
+  "effectiveDate": zod.string().regex(getPropManagerResponseRulesItemOneEffectiveDateRegExp),
+  "sourceUrl": zod.string().max(getPropManagerResponseRulesItemOneSourceUrlMax),
+  "verifiedOn": zod.string().regex(getPropManagerResponseRulesItemOneVerifiedOnRegExp).nullable(),
+  "notes": zod.string().max(getPropManagerResponseRulesItemOneNotesMax),
+  "confirmed": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid()
+}))),
+  "expenses": zod.array(zod.object({
+  "firmId": zod.string().uuid(),
+  "accountId": zod.string().uuid().nullable(),
+  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'other']),
+  "amount": zod.string().regex(getPropManagerResponseExpensesItemOneAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "currency": zod.string().regex(getPropManagerResponseExpensesItemOneCurrencyRegExp),
+  "date": zod.string().regex(getPropManagerResponseExpensesItemOneDateRegExp),
+  "notes": zod.string().max(getPropManagerResponseExpensesItemOneNotesMax)
+}).and(zod.object({
+  "id": zod.string().uuid()
+}))),
+  "payouts": zod.array(zod.object({
+  "accountId": zod.string().uuid(),
+  "grossProfit": zod.string().regex(getPropManagerResponsePayoutsItemOneGrossProfitRegExp).nullable(),
+  "profitSplit": zod.string().regex(getPropManagerResponsePayoutsItemOneProfitSplitRegExp).nullable(),
+  "requestedAmount": zod.string().regex(getPropManagerResponsePayoutsItemOneRequestedAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "netReceived": zod.string().regex(getPropManagerResponsePayoutsItemOneNetReceivedRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "currency": zod.string().regex(getPropManagerResponsePayoutsItemOneCurrencyRegExp),
+  "requestedOn": zod.string().regex(getPropManagerResponsePayoutsItemOneRequestedOnRegExp),
+  "paidOn": zod.string().regex(getPropManagerResponsePayoutsItemOnePaidOnRegExp).nullable(),
+  "status": zod.enum(['requested', 'approved', 'paid', 'rejected', 'cancelled']),
+  "processingFee": zod.string().regex(getPropManagerResponsePayoutsItemOneProcessingFeeRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "notes": zod.string().max(getPropManagerResponsePayoutsItemOneNotesMax)
+}).and(zod.object({
+  "id": zod.string().uuid()
+})))
+})
+
+
+export const CreatePropRecordParams = zod.object({
+  "kind": zod.enum(['firms', 'accounts', 'balances', 'challenges', 'rules', 'expenses', 'payouts'])
+})
+
+export const createPropRecordBodyOneNameMax = 150;
+
+export const createPropRecordBodyOneWebsiteMax = 1000;
+
+export const createPropRecordBodyOnePlatformMax = 150;
+
+export const createPropRecordBodyOneNotesMax = 10000;
+
+export const createPropRecordBodyTwoNameMax = 150;
+
+export const createPropRecordBodyTwoReferenceMax = 150;
+
+export const createPropRecordBodyTwoPlatformMax = 150;
+
+export const createPropRecordBodyTwoCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const createPropRecordBodyTwoNominalSizeRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodyTwoStartingBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodyTwoPurchasedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createPropRecordBodyTwoPhaseMax = 150;
+
+export const createPropRecordBodyTwoNotesMax = 10000;
+
+export const createPropRecordBodyThreeBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodyThreeEquityRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodyThreeNoteMax = 10000;
+
+export const createPropRecordBodyFourNameMax = 150;
+
+export const createPropRecordBodyFourPhaseMax = 150;
+
+export const createPropRecordBodyFourStartingBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodyFourProfitTargetRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodyFourMaximumLossRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodyFourDailyLossRegExp = new RegExp('^\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodyFourMinimumDaysMin = 0;
+export const createPropRecordBodyFourMinimumDaysMax = 100000;
+
+export const createPropRecordBodyFourCompletedDaysMin = 0;
+export const createPropRecordBodyFourCompletedDaysMax = 100000;
+
+export const createPropRecordBodyFourStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createPropRecordBodyFourExpiresOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createPropRecordBodyFourNotesMax = 10000;
+
+export const createPropRecordBodyFiveNameMax = 150;
+
+export const createPropRecordBodyFiveValueMax = 2000;
+
+export const createPropRecordBodyFiveUnitMax = 100;
+
+export const createPropRecordBodyFiveExplanationMax = 10000;
+
+export const createPropRecordBodyFiveEffectiveDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createPropRecordBodyFiveSourceUrlMax = 1000;
+
+export const createPropRecordBodyFiveVerifiedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createPropRecordBodyFiveNotesMax = 10000;
+
+export const createPropRecordBodySixAmountRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodySixCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const createPropRecordBodySixDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createPropRecordBodySixNotesMax = 10000;
+
+export const createPropRecordBodySevenGrossProfitRegExp = new RegExp('^\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodySevenProfitSplitRegExp = new RegExp('^\\d{1,3}(\\.\\d{1,4})?$');
+export const createPropRecordBodySevenRequestedAmountRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodySevenNetReceivedRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodySevenCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const createPropRecordBodySevenRequestedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createPropRecordBodySevenPaidOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createPropRecordBodySevenProcessingFeeRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const createPropRecordBodySevenNotesMax = 10000;
+
+
+
+export const CreatePropRecordBody = zod.union([zod.object({
+  "name": zod.string().min(1).max(createPropRecordBodyOneNameMax),
+  "website": zod.string().max(createPropRecordBodyOneWebsiteMax),
+  "marketType": zod.enum(['CFD', 'Futures', 'Perpetuals']),
+  "platform": zod.string().max(createPropRecordBodyOnePlatformMax),
+  "notes": zod.string().max(createPropRecordBodyOneNotesMax),
+  "status": zod.enum(['active', 'archived'])
+}),zod.object({
+  "firmId": zod.string().uuid(),
+  "name": zod.string().min(1).max(createPropRecordBodyTwoNameMax),
+  "reference": zod.string().max(createPropRecordBodyTwoReferenceMax),
+  "marketType": zod.enum(['CFD', 'Futures', 'Perpetuals']),
+  "platform": zod.string().max(createPropRecordBodyTwoPlatformMax),
+  "currency": zod.string().regex(createPropRecordBodyTwoCurrencyRegExp),
+  "nominalSize": zod.string().regex(createPropRecordBodyTwoNominalSizeRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "startingBalance": zod.string().regex(createPropRecordBodyTwoStartingBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "purchasedOn": zod.string().regex(createPropRecordBodyTwoPurchasedOnRegExp),
+  "status": zod.enum(['not_started', 'evaluation', 'funded', 'passed', 'failed', 'expired', 'closed', 'archived']),
+  "phase": zod.string().max(createPropRecordBodyTwoPhaseMax).describe('Phase is separate from account lifecycle and payout status.'),
+  "journalAccountId": zod.string().uuid().nullable(),
+  "notes": zod.string().max(createPropRecordBodyTwoNotesMax)
+}),zod.object({
+  "accountId": zod.string().uuid(),
+  "balance": zod.string().regex(createPropRecordBodyThreeBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "equity": zod.string().regex(createPropRecordBodyThreeEquityRegExp).nullable(),
+  "note": zod.string().max(createPropRecordBodyThreeNoteMax)
+}),zod.object({
+  "accountId": zod.string().uuid(),
+  "name": zod.string().min(1).max(createPropRecordBodyFourNameMax),
+  "structure": zod.enum(['one_step', 'two_step', 'multi_step', 'instant_funded', 'custom']),
+  "phase": zod.string().min(1).max(createPropRecordBodyFourPhaseMax),
+  "startingBalance": zod.string().regex(createPropRecordBodyFourStartingBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "profitTarget": zod.string().regex(createPropRecordBodyFourProfitTargetRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "maximumLoss": zod.string().regex(createPropRecordBodyFourMaximumLossRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "dailyLoss": zod.string().regex(createPropRecordBodyFourDailyLossRegExp).nullable(),
+  "minimumDays": zod.number().int().min(createPropRecordBodyFourMinimumDaysMin).max(createPropRecordBodyFourMinimumDaysMax),
+  "completedDays": zod.number().int().min(createPropRecordBodyFourCompletedDaysMin).max(createPropRecordBodyFourCompletedDaysMax).describe('Manually confirmed trading days; never inferred from balance snapshots.'),
+  "startDate": zod.string().regex(createPropRecordBodyFourStartDateRegExp),
+  "expiresOn": zod.string().regex(createPropRecordBodyFourExpiresOnRegExp).nullable(),
+  "status": zod.enum(['not_started', 'active', 'passed', 'failed', 'expired']),
+  "notes": zod.string().max(createPropRecordBodyFourNotesMax)
+}),zod.object({
+  "accountId": zod.string().uuid(),
+  "name": zod.string().min(1).max(createPropRecordBodyFiveNameMax),
+  "category": zod.enum(['risk', 'trading', 'payout']),
+  "value": zod.string().min(1).max(createPropRecordBodyFiveValueMax),
+  "unit": zod.string().max(createPropRecordBodyFiveUnitMax),
+  "method": zod.enum(['static_balance_loss', 'trailing_balance_loss', 'daily_loss', 'eod_trailing', 'intraday_trailing', 'equity_loss', 'max_position_size', 'max_contract_size', 'news', 'weekend', 'overnight', 'minimum_days', 'maximum_days', 'consistency', 'maximum_daily_profit', 'restricted_instruments', 'restricted_hours', 'minimum_payout', 'profit_split', 'payout_frequency', 'minimum_profitable_days', 'payout_eligibility', 'payout_cap', 'buffer', 'custom']),
+  "explanation": zod.string().max(createPropRecordBodyFiveExplanationMax),
+  "effectiveDate": zod.string().regex(createPropRecordBodyFiveEffectiveDateRegExp),
+  "sourceUrl": zod.string().max(createPropRecordBodyFiveSourceUrlMax),
+  "verifiedOn": zod.string().regex(createPropRecordBodyFiveVerifiedOnRegExp).nullable(),
+  "notes": zod.string().max(createPropRecordBodyFiveNotesMax),
+  "confirmed": zod.boolean()
+}),zod.object({
+  "firmId": zod.string().uuid(),
+  "accountId": zod.string().uuid().nullable(),
+  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'other']),
+  "amount": zod.string().regex(createPropRecordBodySixAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "currency": zod.string().regex(createPropRecordBodySixCurrencyRegExp),
+  "date": zod.string().regex(createPropRecordBodySixDateRegExp),
+  "notes": zod.string().max(createPropRecordBodySixNotesMax)
+}),zod.object({
+  "accountId": zod.string().uuid(),
+  "grossProfit": zod.string().regex(createPropRecordBodySevenGrossProfitRegExp).nullable(),
+  "profitSplit": zod.string().regex(createPropRecordBodySevenProfitSplitRegExp).nullable(),
+  "requestedAmount": zod.string().regex(createPropRecordBodySevenRequestedAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "netReceived": zod.string().regex(createPropRecordBodySevenNetReceivedRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "currency": zod.string().regex(createPropRecordBodySevenCurrencyRegExp),
+  "requestedOn": zod.string().regex(createPropRecordBodySevenRequestedOnRegExp),
+  "paidOn": zod.string().regex(createPropRecordBodySevenPaidOnRegExp).nullable(),
+  "status": zod.enum(['requested', 'approved', 'paid', 'rejected', 'cancelled']),
+  "processingFee": zod.string().regex(createPropRecordBodySevenProcessingFeeRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "notes": zod.string().max(createPropRecordBodySevenNotesMax)
+})])
+
+export const CreatePropRecordResponse = zod.object({
+  "id": zod.string().uuid()
+})
+
+
+export const UpdatePropRecordParams = zod.object({
+  "kind": zod.enum(['firms', 'accounts', 'balances', 'challenges', 'rules', 'expenses', 'payouts']),
+  "id": zod.coerce.string().uuid()
+})
+
+export const updatePropRecordBodyOneNameMax = 150;
+
+export const updatePropRecordBodyOneWebsiteMax = 1000;
+
+export const updatePropRecordBodyOnePlatformMax = 150;
+
+export const updatePropRecordBodyOneNotesMax = 10000;
+
+export const updatePropRecordBodyTwoNameMax = 150;
+
+export const updatePropRecordBodyTwoReferenceMax = 150;
+
+export const updatePropRecordBodyTwoPlatformMax = 150;
+
+export const updatePropRecordBodyTwoCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const updatePropRecordBodyTwoNominalSizeRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodyTwoStartingBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodyTwoPurchasedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updatePropRecordBodyTwoPhaseMax = 150;
+
+export const updatePropRecordBodyTwoNotesMax = 10000;
+
+export const updatePropRecordBodyThreeBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodyThreeEquityRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodyThreeNoteMax = 10000;
+
+export const updatePropRecordBodyFourNameMax = 150;
+
+export const updatePropRecordBodyFourPhaseMax = 150;
+
+export const updatePropRecordBodyFourStartingBalanceRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodyFourProfitTargetRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodyFourMaximumLossRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodyFourDailyLossRegExp = new RegExp('^\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodyFourMinimumDaysMin = 0;
+export const updatePropRecordBodyFourMinimumDaysMax = 100000;
+
+export const updatePropRecordBodyFourCompletedDaysMin = 0;
+export const updatePropRecordBodyFourCompletedDaysMax = 100000;
+
+export const updatePropRecordBodyFourStartDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updatePropRecordBodyFourExpiresOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updatePropRecordBodyFourNotesMax = 10000;
+
+export const updatePropRecordBodyFiveNameMax = 150;
+
+export const updatePropRecordBodyFiveValueMax = 2000;
+
+export const updatePropRecordBodyFiveUnitMax = 100;
+
+export const updatePropRecordBodyFiveExplanationMax = 10000;
+
+export const updatePropRecordBodyFiveEffectiveDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updatePropRecordBodyFiveSourceUrlMax = 1000;
+
+export const updatePropRecordBodyFiveVerifiedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updatePropRecordBodyFiveNotesMax = 10000;
+
+export const updatePropRecordBodySixAmountRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodySixCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const updatePropRecordBodySixDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updatePropRecordBodySixNotesMax = 10000;
+
+export const updatePropRecordBodySevenGrossProfitRegExp = new RegExp('^\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodySevenProfitSplitRegExp = new RegExp('^\\d{1,3}(\\.\\d{1,4})?$');
+export const updatePropRecordBodySevenRequestedAmountRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodySevenNetReceivedRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodySevenCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const updatePropRecordBodySevenRequestedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updatePropRecordBodySevenPaidOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updatePropRecordBodySevenProcessingFeeRegExp = new RegExp('^-?\\d{1,16}(\\.\\d{1,8})?$');
+export const updatePropRecordBodySevenNotesMax = 10000;
+
+
+
+export const UpdatePropRecordBody = zod.union([zod.object({
+  "name": zod.string().min(1).max(updatePropRecordBodyOneNameMax),
+  "website": zod.string().max(updatePropRecordBodyOneWebsiteMax),
+  "marketType": zod.enum(['CFD', 'Futures', 'Perpetuals']),
+  "platform": zod.string().max(updatePropRecordBodyOnePlatformMax),
+  "notes": zod.string().max(updatePropRecordBodyOneNotesMax),
+  "status": zod.enum(['active', 'archived'])
+}),zod.object({
+  "firmId": zod.string().uuid(),
+  "name": zod.string().min(1).max(updatePropRecordBodyTwoNameMax),
+  "reference": zod.string().max(updatePropRecordBodyTwoReferenceMax),
+  "marketType": zod.enum(['CFD', 'Futures', 'Perpetuals']),
+  "platform": zod.string().max(updatePropRecordBodyTwoPlatformMax),
+  "currency": zod.string().regex(updatePropRecordBodyTwoCurrencyRegExp),
+  "nominalSize": zod.string().regex(updatePropRecordBodyTwoNominalSizeRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "startingBalance": zod.string().regex(updatePropRecordBodyTwoStartingBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "purchasedOn": zod.string().regex(updatePropRecordBodyTwoPurchasedOnRegExp),
+  "status": zod.enum(['not_started', 'evaluation', 'funded', 'passed', 'failed', 'expired', 'closed', 'archived']),
+  "phase": zod.string().max(updatePropRecordBodyTwoPhaseMax).describe('Phase is separate from account lifecycle and payout status.'),
+  "journalAccountId": zod.string().uuid().nullable(),
+  "notes": zod.string().max(updatePropRecordBodyTwoNotesMax)
+}),zod.object({
+  "accountId": zod.string().uuid(),
+  "balance": zod.string().regex(updatePropRecordBodyThreeBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "equity": zod.string().regex(updatePropRecordBodyThreeEquityRegExp).nullable(),
+  "note": zod.string().max(updatePropRecordBodyThreeNoteMax)
+}),zod.object({
+  "accountId": zod.string().uuid(),
+  "name": zod.string().min(1).max(updatePropRecordBodyFourNameMax),
+  "structure": zod.enum(['one_step', 'two_step', 'multi_step', 'instant_funded', 'custom']),
+  "phase": zod.string().min(1).max(updatePropRecordBodyFourPhaseMax),
+  "startingBalance": zod.string().regex(updatePropRecordBodyFourStartingBalanceRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "profitTarget": zod.string().regex(updatePropRecordBodyFourProfitTargetRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "maximumLoss": zod.string().regex(updatePropRecordBodyFourMaximumLossRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "dailyLoss": zod.string().regex(updatePropRecordBodyFourDailyLossRegExp).nullable(),
+  "minimumDays": zod.number().int().min(updatePropRecordBodyFourMinimumDaysMin).max(updatePropRecordBodyFourMinimumDaysMax),
+  "completedDays": zod.number().int().min(updatePropRecordBodyFourCompletedDaysMin).max(updatePropRecordBodyFourCompletedDaysMax).describe('Manually confirmed trading days; never inferred from balance snapshots.'),
+  "startDate": zod.string().regex(updatePropRecordBodyFourStartDateRegExp),
+  "expiresOn": zod.string().regex(updatePropRecordBodyFourExpiresOnRegExp).nullable(),
+  "status": zod.enum(['not_started', 'active', 'passed', 'failed', 'expired']),
+  "notes": zod.string().max(updatePropRecordBodyFourNotesMax)
+}),zod.object({
+  "accountId": zod.string().uuid(),
+  "name": zod.string().min(1).max(updatePropRecordBodyFiveNameMax),
+  "category": zod.enum(['risk', 'trading', 'payout']),
+  "value": zod.string().min(1).max(updatePropRecordBodyFiveValueMax),
+  "unit": zod.string().max(updatePropRecordBodyFiveUnitMax),
+  "method": zod.enum(['static_balance_loss', 'trailing_balance_loss', 'daily_loss', 'eod_trailing', 'intraday_trailing', 'equity_loss', 'max_position_size', 'max_contract_size', 'news', 'weekend', 'overnight', 'minimum_days', 'maximum_days', 'consistency', 'maximum_daily_profit', 'restricted_instruments', 'restricted_hours', 'minimum_payout', 'profit_split', 'payout_frequency', 'minimum_profitable_days', 'payout_eligibility', 'payout_cap', 'buffer', 'custom']),
+  "explanation": zod.string().max(updatePropRecordBodyFiveExplanationMax),
+  "effectiveDate": zod.string().regex(updatePropRecordBodyFiveEffectiveDateRegExp),
+  "sourceUrl": zod.string().max(updatePropRecordBodyFiveSourceUrlMax),
+  "verifiedOn": zod.string().regex(updatePropRecordBodyFiveVerifiedOnRegExp).nullable(),
+  "notes": zod.string().max(updatePropRecordBodyFiveNotesMax),
+  "confirmed": zod.boolean()
+}),zod.object({
+  "firmId": zod.string().uuid(),
+  "accountId": zod.string().uuid().nullable(),
+  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'other']),
+  "amount": zod.string().regex(updatePropRecordBodySixAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "currency": zod.string().regex(updatePropRecordBodySixCurrencyRegExp),
+  "date": zod.string().regex(updatePropRecordBodySixDateRegExp),
+  "notes": zod.string().max(updatePropRecordBodySixNotesMax)
+}),zod.object({
+  "accountId": zod.string().uuid(),
+  "grossProfit": zod.string().regex(updatePropRecordBodySevenGrossProfitRegExp).nullable(),
+  "profitSplit": zod.string().regex(updatePropRecordBodySevenProfitSplitRegExp).nullable(),
+  "requestedAmount": zod.string().regex(updatePropRecordBodySevenRequestedAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "netReceived": zod.string().regex(updatePropRecordBodySevenNetReceivedRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "currency": zod.string().regex(updatePropRecordBodySevenCurrencyRegExp),
+  "requestedOn": zod.string().regex(updatePropRecordBodySevenRequestedOnRegExp),
+  "paidOn": zod.string().regex(updatePropRecordBodySevenPaidOnRegExp).nullable(),
+  "status": zod.enum(['requested', 'approved', 'paid', 'rejected', 'cancelled']),
+  "processingFee": zod.string().regex(updatePropRecordBodySevenProcessingFeeRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
+  "notes": zod.string().max(updatePropRecordBodySevenNotesMax)
+})])
+
+export const UpdatePropRecordResponse = zod.object({
+  "id": zod.string().uuid()
+})
+
+
+export const DeletePropRecordParams = zod.object({
+  "kind": zod.enum(['firms', 'accounts', 'balances', 'challenges', 'rules', 'expenses', 'payouts']),
+  "id": zod.coerce.string().uuid()
+})
+
+export const DeletePropRecordResponse = zod.void()
+
+
 export const listDayNotesQueryFromRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const listDayNotesQueryToRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 

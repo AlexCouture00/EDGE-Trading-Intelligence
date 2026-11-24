@@ -181,3 +181,86 @@ or deployed; Preview validation and publishing remain separate approval steps.
 `validate:migrations` checks both fresh initialization and the additive upgrade
 on a disposable local database, including preservation of an existing account.
 No Supabase migration has been authorized merely by adding these files.
+
+## Prop Firm Manager: pending additive migration
+
+The local application now includes `/prop-manager` under Record. Its storage is
+introduced by `lib/db/drizzle/0002_cultured_taskmaster.sql`, which creates **seven
+new tables only**:
+
+- `edge_prop_firms`
+- `edge_prop_accounts`
+- `edge_prop_balances`
+- `edge_prop_challenges`
+- `edge_prop_rules`
+- `edge_prop_expenses`
+- `edge_prop_payouts`
+
+This brings a fully migrated database to 16 EDGE tables. The migration only
+creates new tables, their indexes and foreign keys, enables their RLS, and revokes
+direct `PUBLIC`, `anon` and `authenticated` access. It does not alter existing
+journal tables, populate demo records, reset the database, copy data, or run at
+startup/build time. No Supabase migration or deployment is authorized by these
+local changes. Until storage is approved and installed, the new page shows an
+explicit "Storage not installed" message; the existing journal remains usable.
+
+Before an explicitly approved activation:
+
+1. Confirm the intended Supabase project using the existing Session pooler
+   `MIGRATION_DATABASE_URL` on port 5432 and certificate-verified TLS with
+   `databasePoolConfig(process.env, true)`. Do not change `DATABASE_URL`, print
+   credentials, or weaken TLS verification.
+2. Read the Drizzle journal and compare **all** recorded migration hashes and
+   timestamps to the corresponding local migrations. Confirm that the first
+   two migrations are present and the seven new tables do not exist. Stop on any
+   unexpected schema or migration history; never use `initialize:external`,
+   `push`, `push-force`, reset or seed against this existing database.
+3. Verify provider recovery/backup availability, then record safe before counts
+   and row-content fingerprints for the existing tables. These checks are not a
+   database backup. Do not export real records into the repository.
+4. After the owner explicitly approves this specific additive migration, use
+   Drizzle's `migrate()` on one verified Session connection with an advisory lock
+   held throughout. Only the pending reviewed migration should run. No production
+   app deployment is implied by storage approval.
+5. Verify all 16 tables, all three migration entries and hashes, all seven empty
+   new tables, RLS, zero direct API-role privileges and unchanged existing-table
+   counts/fingerprints. Do not create synthetic rows in real user storage unless
+   separately approved for Preview validation.
+6. Request separate permission for a feature-branch Vercel Preview deployment
+   and signed-in CRUD validation. Keep Preview protection enabled. **Do not push
+   `main`**, which automatically publishes Production.
+
+### Financial and historical semantics
+
+- Nominal allocations are not personal assets, withdrawable balances or net
+  worth. Personal live journal balances are displayed separately.
+- Reports operate on one selected currency, without assumed FX conversion.
+  Date filters apply to cash flows, not historical reconstructions of allocation.
+- Net cash profit is **net payouts actually received minus recorded expenses**,
+  before personal income taxes. Requested/approved payouts are pending, not cash.
+  A payout's processing fee is informational and already withheld from its net
+  received amount; do not subtract it twice or duplicate it as an expense.
+- Balance snapshots are append-only. A correction appends a new current balance
+  with a correction note; it does not modify the original snapshot. Payouts never
+  adjust balances automatically. Explicitly record the resulting balance if a
+  firm deducted a payout.
+- Balance minus starting balance is a balance-change estimate, not necessarily
+  pure trading P&L: payouts, resets and adjustments may affect it. Linked journal
+  performance remains the source for trading-only calculations.
+- Account status, evaluation phase and payout status are separate. Completing a
+  challenge freezes its recorded closing balance; create the next phase to
+  preserve historical results. Account identity and old snapshots cannot be
+  overwritten; archive accounts/firms rather than deleting them.
+- Rules are user-entered and inactive until confirmed and effective. Only a
+  confirmed static balance-loss rule supports a latest-snapshot loss-allowance
+  estimate. This never certifies historical or live compliance. Daily, trailing,
+  intraday, equity, trading restrictions and payout eligibility show
+  **Not enough data** when manual snapshots cannot establish the result.
+- Expense and payout history stays available when accounts fail, close or
+  archive. Receipt uploads are intentionally not enabled yet; references can be
+  recorded in notes.
+
+`validate:migrations` uses an isolated disposable local PostgreSQL database to
+check fresh initialization, reapplication safety, the additive prop-manager
+upgrade preserving an existing account, RLS, and the API/financial test suite.
+Never point this validator at Supabase.

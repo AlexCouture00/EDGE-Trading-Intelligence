@@ -21,3 +21,4 @@ export * from "./accounts";
 export * from "./research";
 export * from "./trades";
 export * from "./day-notes";
+export * from "./prop-manager";

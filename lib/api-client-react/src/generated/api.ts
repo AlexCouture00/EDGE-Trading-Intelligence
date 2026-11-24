@@ -45,6 +45,9 @@ import type {
   ListDayNotesParams,
   ListStrategiesParams,
   ListTradesParams,
+  PropPortfolio,
+  PropRecordInput,
+  PropSaved,
   Settings,
   Strategy,
   StrategyInput,
@@ -78,6 +81,339 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetPropManagerUrl = () => {
+
+
+
+
+  return `/api/edge/prop-manager`
+}
+
+export const getPropManager = async ( options?: Parameters<typeof customFetch>[1]): Promise<PropPortfolio> => {
+
+  return customFetch<PropPortfolio>(getGetPropManagerUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPropManagerQueryKey = () => {
+    return [
+    `/api/edge/prop-manager`
+    ] as const;
+    }
+
+
+export const getGetPropManagerQueryOptions = <TData = Awaited<ReturnType<typeof getPropManager>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPropManager>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPropManagerQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPropManager>>> = ({ signal }) => getPropManager({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPropManager>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPropManagerQueryResult = NonNullable<Awaited<ReturnType<typeof getPropManager>>>
+export type GetPropManagerQueryError = ErrorType<void>
+
+
+export function useGetPropManager<TData = Awaited<ReturnType<typeof getPropManager>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPropManager>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPropManager>>,
+          TError,
+          Awaited<ReturnType<typeof getPropManager>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPropManager<TData = Awaited<ReturnType<typeof getPropManager>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPropManager>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPropManager>>,
+          TError,
+          Awaited<ReturnType<typeof getPropManager>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPropManager<TData = Awaited<ReturnType<typeof getPropManager>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPropManager>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPropManager<TData = Awaited<ReturnType<typeof getPropManager>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPropManager>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPropManagerQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreatePropRecordUrl = (kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts',) => {
+
+
+
+
+  return `/api/edge/prop-manager/${kind}`
+}
+
+export const createPropRecord = async (kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts',
+    propRecordInput: PropRecordInput, options?: Parameters<typeof customFetch>[1]): Promise<PropSaved> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PropSaved>(getCreatePropRecordUrl(kind),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propRecordInput)
+  }
+);}
+
+
+
+
+
+export const getCreatePropRecordMutationKey = () => ['createPropRecord'] as const;
+
+export const getCreatePropRecordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPropRecord>>, TError,CreatePropRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPropRecord>>, TError,CreatePropRecordMutationVariables, TContext> => {
+
+const mutationKey = getCreatePropRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPropRecord>>, CreatePropRecordMutationVariables> = (props) => {
+          const {kind,data} = props ?? {};
+
+          return  createPropRecord(kind,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePropRecordMutationResult = NonNullable<Awaited<ReturnType<typeof createPropRecord>>>
+    export type CreatePropRecordMutationBody = BodyType<PropRecordInput>
+    export type CreatePropRecordMutationError = ErrorType<void>
+    export type CreatePropRecordMutationVariables = {kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts';data: BodyType<PropRecordInput>}
+
+    export const useCreatePropRecord = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPropRecord>>, TError,CreatePropRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createPropRecord>>,
+        TError,
+        CreatePropRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreatePropRecordMutationOptions(options), queryClient);
+    }
+
+export const getUpdatePropRecordUrl = (kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts',
+    id: string,) => {
+
+
+
+
+  return `/api/edge/prop-manager/${kind}/${id}`
+}
+
+export const updatePropRecord = async (kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts',
+    id: string,
+    propRecordInput: PropRecordInput, options?: Parameters<typeof customFetch>[1]): Promise<PropSaved> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PropSaved>(getUpdatePropRecordUrl(kind,id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propRecordInput)
+  }
+);}
+
+
+
+
+
+export const getUpdatePropRecordMutationKey = () => ['updatePropRecord'] as const;
+
+export const getUpdatePropRecordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePropRecord>>, TError,UpdatePropRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePropRecord>>, TError,UpdatePropRecordMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePropRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePropRecord>>, UpdatePropRecordMutationVariables> = (props) => {
+          const {kind,id,data} = props ?? {};
+
+          return  updatePropRecord(kind,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePropRecordMutationResult = NonNullable<Awaited<ReturnType<typeof updatePropRecord>>>
+    export type UpdatePropRecordMutationBody = BodyType<PropRecordInput>
+    export type UpdatePropRecordMutationError = ErrorType<void>
+    export type UpdatePropRecordMutationVariables = {kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts';id: string;data: BodyType<PropRecordInput>}
+
+    export const useUpdatePropRecord = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePropRecord>>, TError,UpdatePropRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updatePropRecord>>,
+        TError,
+        UpdatePropRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdatePropRecordMutationOptions(options), queryClient);
+    }
+
+export const getDeletePropRecordUrl = (kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts',
+    id: string,) => {
+
+
+
+
+  return `/api/edge/prop-manager/${kind}/${id}`
+}
+
+export const deletePropRecord = async (kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts',
+    id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeletePropRecordUrl(kind,id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeletePropRecordMutationKey = () => ['deletePropRecord'] as const;
+
+export const getDeletePropRecordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePropRecord>>, TError,DeletePropRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePropRecord>>, TError,DeletePropRecordMutationVariables, TContext> => {
+
+const mutationKey = getDeletePropRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePropRecord>>, DeletePropRecordMutationVariables> = (props) => {
+          const {kind,id} = props ?? {};
+
+          return  deletePropRecord(kind,id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePropRecordMutationResult = NonNullable<Awaited<ReturnType<typeof deletePropRecord>>>
+
+    export type DeletePropRecordMutationError = ErrorType<void>
+    export type DeletePropRecordMutationVariables = {kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts';id: string}
+
+    export const useDeletePropRecord = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePropRecord>>, TError,DeletePropRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deletePropRecord>>,
+        TError,
+        DeletePropRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeletePropRecordMutationOptions(options), queryClient);
+    }
 
 export const getListDayNotesUrl = (params: ListDayNotesParams,) => {
   const normalizedParams = new URLSearchParams();
