@@ -208,7 +208,7 @@ No Supabase migration has been authorized merely by adding these files.
 
 MFE is the manually recorded maximum favorable excursion in R while a trade
 was open, not a price-based reconstruction or an observation after exit.
-The form offers 1, 1.5, 2, 3, 4, 5, 7 and 10R shortcuts and accepts exact
+The form offers 0.25, 0.5, 1, 1.5, 2, 3, 4, 5, 7 and 10R shortcuts and accepts exact
 nonnegative decimal values. Unknown MFE is null, never inferred as zero.
 Existing execution prices remain in storage even though the four price fields
 are no longer presented in the logging form.

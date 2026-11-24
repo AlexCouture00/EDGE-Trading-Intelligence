@@ -27,7 +27,7 @@ const FEES = ["commission", "funding", "slippage"] as const;
 const SESSIONS = ["Asia", "London", "New York", "London/NY overlap"];
 const REGIMES = ["Trend Following", "Counter Trend", "Ranging"];
 const VOLATILITIES = ["High", "Medium", "Low"];
-const MFE_PRESETS = ["1", "1.5", "2", "3", "4", "5", "7", "10"];
+const MFE_PRESETS = ["0.25", "0.5", "1", "1.5", "2", "3", "4", "5", "7", "10"];
 
 function toLocal(iso?: string | null, timezone = "UTC") {
   if (!iso) return "";
