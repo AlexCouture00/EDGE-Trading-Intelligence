@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NSelect } from "@/components/nselect";
 import { FilterBar } from "@/components/filter-bar";
-import { DirPill, Empty, ErrorBlock, LoadingBlock, Money, PageHeader, Panel, R, StatusPill, WriteGate } from "@/components/kit";
+import { DirPill, Empty, ErrorBlock, LoadingBlock, PageHeader, Panel, R, StatusPill, WriteGate } from "@/components/kit";
+import { totalRecordedR } from "@/lib/journal-r";
 import { useFilters } from "@/lib/filters";
 import { useMode } from "@/lib/mode";
 import { useDateFormatter } from "@/lib/time";
@@ -21,8 +22,8 @@ function exportCsv(trades: Trade[], scope: string) {
   const cols: [string, (t: Trade) => unknown][] = [
     ["id", (t) => t.id], ["status", (t) => t.status], ["currency", (t) => t.currency], ["symbol", (t) => t.symbol], ["assetClass", (t) => t.assetClass],
     ["direction", (t) => t.direction], ["strategy", (t) => t.strategyName], ["entryAtUtc", (t) => t.entryAt], ["exitAtUtc", (t) => t.exitAt], ["entryPrice", (t) => t.entryPrice], ["exitPrice", (t) => t.exitPrice],
-    ["stopLoss", (t) => t.stopLoss], ["takeProfit", (t) => t.takeProfit], ["quantity", (t) => t.quantity], ["initialRisk", (t) => t.initialRisk], ["grossPnl", (t) => t.grossPnl], ["commission", (t) => t.commission],
-    ["funding", (t) => t.funding], ["slippage", (t) => t.slippage], ["netPnl", (t) => t.netPnl], ["realizedR", (t) => t.realizedR], ["confluences", (t) => t.confluences.map((c) => c.name)],
+    ["stopLoss", (t) => t.stopLoss], ["takeProfit", (t) => t.takeProfit], ["quantity", (t) => t.quantity],
+    ["realizedR", (t) => t.realizedR], ["confluences", (t) => t.confluences.map((c) => c.name)],
     ["session", (t) => t.session], ["emotion", (t) => t.emotion], ["grade", (t) => t.grade], ["followedPlan", (t) => t.followedPlan], ["behavioralTags", (t) => t.behavioralTags], ["lesson", (t) => t.lesson], ["chartUrl", (t) => t.chartUrl],
   ];
   const lines = [`# EDGE export · ${scope} · ${trades.length} trades · generated ${new Date().toISOString()}`, cols.map((c) => c[0]).join(","), ...trades.map((t) => cols.map(([, f]) => cell(f(t))).join(","))];
@@ -47,7 +48,7 @@ export default function Journal() {
 
   const totals = useMemo(() => {
     const closed = trades.filter((t) => t.status === "closed");
-    return { closed: closed.length, net: closed.reduce((s, t) => s + (Number(t.netPnl) || 0), 0), cur: trades[0]?.currency ?? "USD" };
+    return { closed: closed.length, totalR: totalRecordedR(closed) };
   }, [trades]);
 
   return (
@@ -68,7 +69,7 @@ export default function Journal() {
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search thesis, lessons, symbols..." className="h-8 w-[280px] pl-8 text-[12.5px] bg-card" data-testid="input-search" />
         </div>
         <NSelect value={status} onChange={setStatus} allowNone noneLabel="All statuses" className="w-[140px]" testId="select-status" options={[{ value: "closed", label: "Closed" }, { value: "open", label: "Open" }, { value: "draft", label: "Draft" }]} />
-        <span className="ml-auto text-[12px] text-muted-foreground num">{trades.length} shown · {totals.closed} closed · <Money v={totals.net} currency={totals.cur} /></span>
+        <span className="ml-auto text-[12px] text-muted-foreground num">{trades.length} shown · {totals.closed} closed · <R v={totals.totalR} /></span>
       </div>
       <Panel bodyClass="p-0">
         {q.isLoading ? <div className="p-4"><LoadingBlock rows={8} /></div> : q.error ? <div className="p-4"><ErrorBlock error={q.error} retry={() => q.refetch()} /></div> : trades.length === 0 ? (
@@ -79,7 +80,7 @@ export default function Journal() {
             <table className="w-full text-[12.5px]">
               <thead>
                 <tr className="text-left text-muted-foreground border-b border-card-border">
-                  {["Date", "Symbol", "Side", "Status", "Strategy", "Confluences", "Grade", "Net P&L", "R"].map((h, i) => (
+                  {["Date", "Symbol", "Side", "Status", "Strategy", "Confluences", "Grade", "R"].map((h, i) => (
                     <th key={h} className={`font-normal px-3 py-2.5 whitespace-nowrap ${i === 0 ? "pl-4" : ""} ${i >= 7 ? "text-right" : ""} ${i === 8 ? "pr-4" : ""}`}>{h}</th>
                   ))}
                 </tr>
@@ -96,7 +97,6 @@ export default function Journal() {
                       <div className="flex items-center gap-1">{t.confluences.slice(0, 6).map((c) => <span key={c.id} title={c.name} className="h-2 w-2 rounded-full" style={{ background: c.color ?? "#888" }} />)}<span className="num text-[11px] text-muted-foreground ml-1">{t.confluences.length || ""}</span></div>
                     </td>
                     <td className="px-3 py-2.5 num">{t.grade ?? "—"}</td>
-                    <td className="px-3 py-2.5 text-right whitespace-nowrap">{t.status === "closed" ? <Money v={t.netPnl} currency={t.currency} /> : <span className="text-muted-foreground">—</span>}</td>
                     <td className="pr-4 px-3 py-2.5 text-right"><R v={t.realizedR} /></td>
                   </tr>
                 ))}

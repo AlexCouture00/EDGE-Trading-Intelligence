@@ -21,3 +21,9 @@ The journal workspace should track trades, not account balances. Account and bal
 **Why:** The user wants only trade tracking in the journal and already tracks balances with Prop Firm Manager. They explicitly chose to hide accounts and preserve their trade history.
 
 **How to apply:** Do not reintroduce journal-facing account setup or balance tracking when simplifying trade workflows. Preserve existing trade history and keep Prop Firm Manager separate.
+
+The journal uses R-only trade entry and result displays. Dollar results belong only in Prop Firm Manager; retain historical monetary records internally rather than deleting or converting them.
+
+**Why:** The user explicitly selected “R-only entry and displays” and asked to keep dollars in the prop firm tracker.
+
+**How to apply:** Never fabricate monetary P&L or a nominal dollar risk to store an R result. Include directly entered R in journal analytics without requiring monetary results.

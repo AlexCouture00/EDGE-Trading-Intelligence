@@ -5,7 +5,7 @@ import { useGetAnalytics, useListStrategies, useUpdateStrategy, type Strategy } 
 import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/components/filter-bar";
 import { GroupBars } from "@/components/charts";
-import { Empty, ErrorBlock, GroupTable, LoadingBlock, Money, PageHeader, Panel, R, SampleBadge, WriteGate } from "@/components/kit";
+import { Empty, ErrorBlock, GroupTable, LoadingBlock, PageHeader, Panel, R, SampleBadge, WriteGate } from "@/components/kit";
 import { StrategyDialog } from "@/components/strategy-dialog";
 import { useFilters } from "@/lib/filters";
 import { useMode } from "@/lib/mode";
@@ -74,7 +74,6 @@ export default function Strategies() {
                   <div><div className="eyebrow">Win</div><div className="num mt-1">{ratio(g?.winRate)}</div></div>
                   <div><div className="eyebrow">Avg R</div><div className="mt-1"><R v={g?.averageR} /></div></div>
                   <div><div className="eyebrow">Total R</div><div className="mt-1"><R v={g && g.rSample > 0 ? g.totalR : null} /></div></div>
-                  <div><div className="eyebrow">Net</div><div className="mt-1">{g ? <Money v={g.netPnl} currency={cur} /> : <span className="num">—</span>}</div></div>
                 </div>
                 <div className="text-[11px] text-muted-foreground">PF {g ? pf(g) : "—"} · {[s.entryRules, s.exitRules, s.riskRules].filter(Boolean).length}/3 rule sets written</div>
               </div>

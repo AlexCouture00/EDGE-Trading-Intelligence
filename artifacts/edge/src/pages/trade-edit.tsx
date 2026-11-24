@@ -13,7 +13,7 @@ export default function TradeEdit() {
   if (q.error || !q.data) return <ErrorBlock error={q.error ?? new Error("Trade not found")} retry={() => q.refetch()} />;
   return (
     <div>
-      <PageHeader eyebrow="Journal · Edit" title={`${q.data.symbol || "Untitled"} ${q.data.direction ?? ""}`.trim()} sub="Changes recalculate net P&L and R on save." />
+      <PageHeader eyebrow="Journal · Edit" title={`${q.data.symbol || "Untitled"} ${q.data.direction ?? ""}`.trim()} sub="Review your execution, context and result in R." />
       <TradeEditor key={q.data.id} initial={q.data} />
     </div>
   );

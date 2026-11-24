@@ -12,4 +12,5 @@ export type TradeInputPnlSource = typeof TradeInputPnlSource[keyof typeof TradeI
 export const TradeInputPnlSource = {
   broker: 'broker',
   calculated: 'calculated',
+  r: 'r',
 } as const;

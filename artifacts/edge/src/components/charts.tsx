@@ -3,6 +3,7 @@ import type { EquityPoint, GroupMetrics } from "@workspace/api-client-react";
 import { formatInTimeZone } from "date-fns-tz";
 import { useTimezone } from "@/lib/time";
 import { money, num } from "@/lib/format";
+import { rDrawdown } from "@/lib/journal-r";
 
 const axis = { stroke: "hsl(220 5% 40%)", fontSize: 10.5, fontFamily: "Geist Mono, monospace", tickLine: false, axisLine: false } as const;
 const grid = <CartesianGrid stroke="hsl(220 6% 100% / 0.04)" vertical={false} />;
@@ -68,14 +69,15 @@ export function RChart({ data, height = 220 }: { data: EquityPoint[]; height?: n
 
 export function DrawdownChart({ data, currency, height = 200 }: { data: EquityPoint[]; currency: string; height?: number }) {
   const timezone = useTimezone();
-  const d = data.map((p) => ({ ...p, dd: -Math.abs(p.drawdown) }));
+  const drawdowns = rDrawdown(data);
+  const d = data.map((p, i) => ({ ...p, dd: -drawdowns[i]! }));
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={d} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
         {grid}
         <XAxis dataKey="date" {...axis} tickFormatter={(s: string) => tick(s, timezone)} minTickGap={40} />
-        <YAxis {...axis} width={64} tickFormatter={(v: number) => money(v, currency, { compact: true })} />
-        <Tooltip content={<Tip fmt={(v) => money(v, currency)} />} cursor={{ stroke: "hsl(220 5% 30%)" }} />
+        <YAxis {...axis} width={64} tickFormatter={(v: number) => `${v}R`} />
+        <Tooltip content={<Tip fmt={(v) => `${v.toFixed(2)}R`} />} cursor={{ stroke: "hsl(220 5% 30%)" }} />
         <Area type="stepAfter" dataKey="dd" name="Drawdown" stroke="hsl(var(--neg))" strokeWidth={1.25} fill="hsl(var(--neg) / 0.12)" dot={false} />
       </AreaChart>
     </ResponsiveContainer>

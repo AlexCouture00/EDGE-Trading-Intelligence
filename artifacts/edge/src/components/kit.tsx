@@ -163,10 +163,9 @@ export function GroupTable({ rows, currency, label = "Group", empty, onRowClick,
             <th className="font-normal px-4 py-2">{label}</th>
             <th className="font-normal px-3 py-2 text-right">Trades</th>
             <th className="font-normal px-3 py-2 text-right">Win rate</th>
-            <th className="font-normal px-3 py-2 text-right">Net P&amp;L</th>
             <th className="font-normal px-3 py-2 text-right">Avg R</th>
             <th className="font-normal px-3 py-2 text-right">Total R</th>
-            <th className="font-normal px-4 py-2 text-right">PF</th>
+            <th className="font-normal px-4 py-2 text-right">PF (R)</th>
           </tr>
         </thead>
         <tbody>
@@ -183,9 +182,8 @@ export function GroupTable({ rows, currency, label = "Group", empty, onRowClick,
                 </td>
                 <td className="px-3 py-2.5 text-right num">{g.totalTrades}</td>
                 <td className={cn("px-3 py-2.5 text-right num", low && "text-muted-foreground")}>{ratio(g.winRate)}</td>
-                <td className="px-3 py-2.5 text-right"><Money v={g.netPnl} currency={currency} /></td>
                 <td className="px-3 py-2.5 text-right"><R v={g.averageR} /></td>
-                <td className="px-3 py-2.5 text-right"><R v={g.totalR} /></td>
+                <td className="px-3 py-2.5 text-right"><R v={g.rSample ? g.totalR : null} /></td>
                 <td className="px-4 py-2.5 text-right num">{pf(g)}</td>
               </tr>
             );

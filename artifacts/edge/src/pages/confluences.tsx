@@ -8,7 +8,7 @@ import { GroupBars } from "@/components/charts";
 import { Caution, ErrorBlock, GroupTable, LoadingBlock, PageHeader, Panel, SampleBadge, Stat } from "@/components/kit";
 import { useFilters } from "@/lib/filters";
 import { useMode } from "@/lib/mode";
-import { money, pf, ratio, rFmt, tone } from "@/lib/format";
+import { pf, ratio, rFmt, tone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export default function Confluences() {
@@ -71,7 +71,6 @@ export default function Confluences() {
                     <Stat label="Win rate" value={ratio(cm.winRate)} />
                     <Stat label="Avg R" value={rFmt(cm.averageR)} valueClass={tone(cm.averageR)} sub={`n=${cm.rSample}`} />
                     <Stat label="Total R" value={rFmt(cm.totalR)} valueClass={tone(cm.totalR)} />
-                    <Stat label="Net P&L" value={money(cm.netPnl, cur, { signed: true })} valueClass={tone(cm.netPnl)} />
                     <Stat label="Profit factor" value={pf(cm)} />
                   </div>
                   {a && <p className="text-[12px] text-muted-foreground mt-3">Baseline for comparison: all {a.metrics.totalTrades} closed trades in scope averaged <span className={tone(a.metrics.averageR)}>{rFmt(a.metrics.averageR)}</span> at {ratio(a.metrics.winRate)} win rate.</p>}

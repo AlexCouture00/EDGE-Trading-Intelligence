@@ -534,6 +534,7 @@ export type TradeInputPnlSource = typeof TradeInputPnlSource[keyof typeof TradeI
 export const TradeInputPnlSource = {
   broker: 'broker',
   calculated: 'calculated',
+  r: 'r',
 } as const;
 
 export type TradeInputGrade = typeof TradeInputGrade[keyof typeof TradeInputGrade];
@@ -584,6 +585,11 @@ export interface TradeInput {
   funding?: string;
   slippage?: string;
   pnlSource?: TradeInputPnlSource;
+  /**
+     * Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.
+     * @nullable
+     */
+  resultR?: string | null;
   /** @nullable */
   strategyId?: string | null;
   /** @maxLength 50 */

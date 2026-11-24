@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
-import { Check, Lock } from "lucide-react";
+import { Check } from "lucide-react";
 import {
   useCreateTrade, useUpdateTrade, useListConfluences, useListStrategies, getGetTradeQueryKey,
   type Trade, type TradeInput, type TradeInputStatus, type TradeInputAssetClass, type TradeInputDirection, type TradeInputGrade, type TradeInputPnlSource,
@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { NSelect } from "@/components/nselect";
 import { Caution } from "@/components/kit";
 import { useToast } from "@/hooks/use-toast";
-import { ASSET_CLASSES, errMsg, money, num } from "@/lib/format";
+import { ASSET_CLASSES, errMsg, rFmt } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useTimezone } from "@/lib/time";
 import { useFilters } from "@/lib/filters";
@@ -41,7 +41,8 @@ function fromTrade(t?: Trade, timezone = "UTC"): F {
   f.status = t?.status ?? "closed";
   f.assetClass = t?.assetClass ?? "";
   f.direction = t?.direction ?? "";
-  f.pnlSource = t?.pnlSource ?? "broker";
+  f.pnlSource = "r";
+  f.resultR = t?.realizedR ?? "";
   f.strategyId = t?.strategyId ?? "";
   f.grade = t?.grade ?? "";
   f.confidence = t?.confidence ? String(t.confidence) : "";
@@ -54,7 +55,7 @@ function fromTrade(t?: Trade, timezone = "UTC"): F {
 const SECTIONS = [
   { id: "basics", label: "Instrument" },
   { id: "execution", label: "Execution" },
-  { id: "pnl", label: "P&L" },
+  { id: "pnl", label: "Result in R" },
   { id: "confluences", label: "Confluences" },
   { id: "context", label: "Context" },
   { id: "psychology", label: "Psychology" },
@@ -118,37 +119,27 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
   const set = (k: string, v: string) => { setF((p) => ({ ...p, [k]: v })); if (errors[k]) setErrors((e) => ({ ...e, [k]: "" })); };
 
   const riskLocked = !!initial && initial.status !== "draft";
-  const cur = f.currency;
-
-  const preview = useMemo(() => {
-    const fees = FEES.reduce((s, k) => s + (num(f[k]) ?? 0), 0);
-    let gross: number | null = null;
-    if (f.pnlSource === "broker") gross = num(f.grossPnl);
-    else {
-      const e = num(f.entryPrice), x = num(f.exitPrice), q = num(f.quantity), m = num(f.multiplier);
-      if (e !== null && x !== null && q !== null && m !== null && f.direction) gross = (f.direction === "long" ? x - e : e - x) * q * m;
-    }
-    const net = gross === null ? null : gross - fees;
-    const risk = num(f.initialRisk);
-    return { net, r: net !== null && risk ? net / risk : null, fees };
-  }, [f]);
+  const directR = f.pnlSource === "r";
+  const preserveUnknownR = (status: string) => initial?.status === "closed"
+    && initial.pnlSource !== "r" && initial.realizedR === null && status === "closed" && f.resultR === "";
 
   function validate(status: string): F {
     const e: F = {};
-    if (!/^[A-Z]{3}$/.test(f.currency)) e.currency = "Enter a 3-letter trade currency";
     for (const k of [...NUMS, ...FEES]) if (f[k] && !DEC.test(f[k])) e[k] = "Number only";
+    if (directR && f.resultR && !/^-?\d+(\.\d{1,8})?$/.test(f.resultR)) e.resultR = "Enter R with up to 8 decimal places";
     if (f.chartUrl && !/^https:\/\//.test(f.chartUrl)) e.chartUrl = "Must be a valid HTTPS URL";
     if (status !== "draft") {
       if (!f.symbol.trim()) e.symbol = "Required";
       if (!f.direction) e.direction = "Required";
       if (!f.entryAt) e.entryAt = "Required";
-      if (!f.entryPrice || Number(f.entryPrice) <= 0) e.entryPrice = "Positive entry price required";
-      if (!f.quantity || Number(f.quantity) <= 0) e.quantity = "Positive position size required";
+      if (!directR && (!f.entryPrice || Number(f.entryPrice) <= 0)) e.entryPrice = "Positive entry price required";
+      if (!directR && (!f.quantity || Number(f.quantity) <= 0)) e.quantity = "Positive position size required";
     }
     if (status === "closed") {
       if (!f.exitAt) e.exitAt = "Required to close";
       else if (f.entryAt && new Date(f.exitAt) < new Date(f.entryAt)) e.exitAt = "Exit must be at or after entry";
-      if (f.pnlSource === "broker") { if (!f.grossPnl) e.grossPnl = "Broker gross P&L required"; }
+      if (directR) { if (!f.resultR && !preserveUnknownR(status)) e.resultR = "Enter the net result in R, including 0 for breakeven"; }
+      else if (f.pnlSource === "broker") { if (!f.grossPnl) e.grossPnl = "Historical result unavailable"; }
       else {
         for (const k of ["entryPrice", "exitPrice", "quantity", "multiplier"]) if (!f[k]) e[k] = "Required for calculated P&L";
       }
@@ -167,14 +158,21 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
     d.exitAt = status === "closed" ? iso(f.exitAt) : (f.exitAt ? iso(f.exitAt) : null);
     if (f.assetClass) d.assetClass = f.assetClass as TradeInputAssetClass;
     if (f.direction) d.direction = f.direction as TradeInputDirection;
-    d.pnlSource = f.pnlSource as TradeInputPnlSource;
+    const saveR = directR && !preserveUnknownR(status);
+    d.pnlSource = (saveR ? "r" : initial?.pnlSource ?? f.pnlSource) as TradeInputPnlSource;
+    if (saveR) {
+      d.resultR = status === "closed" && f.resultR ? f.resultR : null;
+      d.initialRisk = null;
+      d.grossPnl = null;
+      d.commission = "0"; d.funding = "0"; d.slippage = "0";
+    }
     d.strategyId = f.strategyId || null;
     if (f.grade) d.grade = f.grade as TradeInputGrade;
     if (f.confidence) d.confidence = Number(f.confidence);
     if (followedPlan !== undefined) d.followedPlan = followedPlan;
     d.behavioralTags = f.behavioralTags.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 20);
     d.confluenceIds = conf;
-    if (initial?.executions?.length) {
+    if (!saveR && initial?.executions?.length) {
       if (initial.executions.length > 2 || initial.executions.filter((x) => x.kind === "entry").length > 1 || initial.executions.filter((x) => x.kind === "exit").length > 1) {
         // Multi-fill execution editing is a later workflow; reject contradictory summaries on the server.
         d.executions = initial.executions;
@@ -226,9 +224,8 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
           ))}
           <div className="mt-6 panel p-3 space-y-2">
             <div className="eyebrow">Preview</div>
-            <div className={cn("num text-lg", preview.net === null ? "text-muted-foreground" : preview.net >= 0 ? "text-pos" : "text-neg")}>{preview.net === null ? "—" : money(preview.net, cur, { signed: true })}</div>
-            <div className="num text-[12px] text-muted-foreground">{preview.r === null ? "R unavailable" : `${preview.r >= 0 ? "+" : ""}${preview.r.toFixed(2)}R`}</div>
-            <div className="text-[10.5px] text-muted-foreground leading-snug">Estimate only. Server computes stored values.</div>
+            <div className="num text-lg">{status === "closed" ? rFmt(f.resultR) : "—"}</div>
+            <div className="text-[10.5px] text-muted-foreground leading-snug">Net result in units of planned risk. Open trades and drafts are excluded.</div>
           </div>
         </div>
       </aside>
@@ -242,10 +239,6 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
 
         <Sec id="basics" n={1} title="Instrument" desc="What and where">
           <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-            <Field label="Trade currency" className="col-span-2" error={errors.currency} hint="Denomination only — no account balance required.">
-              <Input value={f.currency} maxLength={3} disabled={riskLocked} onChange={(e) => set("currency", e.target.value.toUpperCase())}
-                className={cn(inp, "num uppercase")} placeholder="USD" data-testid="input-trade-currency" />
-            </Field>
             <Field label="Strategy" className="col-span-2">
               <NSelect value={f.strategyId} onChange={(v) => set("strategyId", v)} allowNone noneLabel="No strategy" className={inp} testId="select-trade-strategy"
                 options={(strategies.data ?? []).filter((s) => !s.archived || s.id === f.strategyId).map((s) => ({ value: s.id, label: s.name }))} />
@@ -274,14 +267,6 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
             <Field label="Stop loss" error={errors.stopLoss}><Input value={f.stopLoss} inputMode="decimal" onChange={(e) => set("stopLoss", e.target.value)} className={cn(inp, "num")} data-testid="input-stop-loss" /></Field>
             <Field label="Take profit" error={errors.takeProfit}><Input value={f.takeProfit} inputMode="decimal" onChange={(e) => set("takeProfit", e.target.value)} className={cn(inp, "num")} data-testid="input-take-profit" /></Field>
             <Field label="Quantity" error={errors.quantity}><Input value={f.quantity} inputMode="decimal" onChange={(e) => set("quantity", e.target.value)} placeholder="lots / units" className={cn(inp, "num")} data-testid="input-quantity" /></Field>
-            <Field label="Multiplier" error={errors.multiplier} hint="Account currency per 1.0 price move per unit"><Input value={f.multiplier} inputMode="decimal" onChange={(e) => set("multiplier", e.target.value)} className={cn(inp, "num")} data-testid="input-multiplier" /></Field>
-            <Field label={`Initial risk (${cur})`} className="col-span-2" error={errors.initialRisk}
-              hint={riskLocked ? "Locked after the trade first left draft, so R stays honest." : "Amount you stood to lose at the stop. Locked once the trade is open or closed."}>
-              <div className="relative">
-                <Input value={f.initialRisk} inputMode="decimal" disabled={riskLocked} onChange={(e) => set("initialRisk", e.target.value)} className={cn(inp, "num pr-8")} data-testid="input-initial-risk" />
-                {riskLocked && <Lock className="h-3.5 w-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />}
-              </div>
-            </Field>
           </div>
           {initial?.executions && initial.executions.length > 0 && (
             <div className="mt-5 border-t border-card-border pt-4">
@@ -293,23 +278,10 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
           )}
         </Sec>
 
-        <Sec id="pnl" n={3} title="P&L" desc="Broker figures or linear calculation">
-          <div className="grid grid-cols-2 gap-2 max-w-md mb-4">
-            {(["broker", "calculated"] as const).map((s) => (
-              <button key={s} type="button" onClick={() => set("pnlSource", s)} className={cn("rounded-md border px-3 py-2 text-left transition-colors", f.pnlSource === s ? "border-foreground/40 bg-secondary" : "border-input hover:border-foreground/20")} data-testid={`button-pnl-${s}`}>
-                <div className="text-[12.5px] font-medium">{s === "broker" ? "Broker gross P&L" : "Calculated (linear)"}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">{s === "broker" ? "Any instrument. Copy from statement." : "Requires prices, qty and explicit multiplier."}</div>
-              </button>
-            ))}
-          </div>
-          {f.pnlSource === "calculated" && <div className="mb-4"><Caution>Calculated mode assumes a linear instrument quoted so that price move x quantity x multiplier lands in {cur}. For cross-currency pairs or unknown contract specs, use broker mode.</Caution></div>}
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-            <Field label={`Gross P&L (${cur})`} error={errors.grossPnl}><Input value={f.grossPnl} inputMode="decimal" disabled={f.pnlSource !== "broker"} onChange={(e) => set("grossPnl", e.target.value)} placeholder={f.pnlSource === "broker" ? "-182.40" : "computed"} className={cn(inp, "num")} data-testid="input-gross-pnl" /></Field>
-            <Field label="Commission" error={errors.commission}><Input value={f.commission} inputMode="decimal" onChange={(e) => set("commission", e.target.value)} placeholder="0" className={cn(inp, "num")} data-testid="input-commission" /></Field>
-            <Field label="Swap / funding" error={errors.funding}><Input value={f.funding} inputMode="decimal" onChange={(e) => set("funding", e.target.value)} placeholder="0" className={cn(inp, "num")} data-testid="input-funding" /></Field>
-            <Field label="Slippage" error={errors.slippage}><Input value={f.slippage} inputMode="decimal" onChange={(e) => set("slippage", e.target.value)} placeholder="0" className={cn(inp, "num")} data-testid="input-slippage" /></Field>
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-3">Costs are entered as positive amounts and subtracted from gross.</p>
+        <Sec id="pnl" n={3} title="Result in R" desc="No dollar amounts">
+          <Field label="Net result (R)" error={errors.resultR} hint={initial?.status === "closed" && initial.realizedR === null && initial.pnlSource !== "r" ? "No historical R was recorded. Leave blank to preserve it as unavailable, or enter your verified result in R." : "Enter the final result after costs: 2 for +2R, -1 for -1R, or 0 for breakeven. Historical monetary records are preserved internally."}>
+            <Input value={f.resultR} disabled={status !== "closed"} inputMode="decimal" onChange={e => set("resultR", e.target.value)} placeholder="2.00" className={cn(inp, "num max-w-xs")} data-testid="input-result-r" />
+          </Field>
         </Sec>
 
         <Sec id="confluences" n={4} title="Confluences" desc={`${conf.length} selected`}>
@@ -389,7 +361,7 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
 
       <div className="fixed bottom-0 left-0 right-0 md:left-[232px] z-20 border-t border-border bg-background/90 backdrop-blur">
         <div className="max-w-[1440px] px-4 md:px-8 h-14 flex items-center gap-3">
-          <span className="text-[12px] text-muted-foreground hidden sm:block">Saving as <span className="text-foreground capitalize">{status}</span>{preview.net !== null && <> · est. <span className={preview.net >= 0 ? "text-pos" : "text-neg"}>{money(preview.net, cur, { signed: true })}</span></>}</span>
+          <span className="text-[12px] text-muted-foreground hidden sm:block">Saving as <span className="text-foreground capitalize">{status}</span>{status === "closed" && <> · {rFmt(f.resultR)}</>}</span>
           <div className="ml-auto flex gap-2">
             <Button variant="ghost" onClick={() => (initial ? nav(`/trades/${initial.id}`) : nav("/journal"))} data-testid="button-cancel">Cancel</Button>
             {status !== "draft" && !initial && <Button variant="outline" disabled={pending} onClick={() => submit("draft")} data-testid="button-save-draft">Save as draft</Button>}

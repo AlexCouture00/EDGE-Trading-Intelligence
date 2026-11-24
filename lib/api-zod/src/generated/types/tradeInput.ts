@@ -49,6 +49,11 @@ export interface TradeInput {
   funding?: string;
   slippage?: string;
   pnlSource?: TradeInputPnlSource;
+  /**
+     * Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.
+     * @nullable
+     */
+  resultR?: string | null;
   /** @nullable */
   strategyId?: string | null;
   /** @maxLength 50 */

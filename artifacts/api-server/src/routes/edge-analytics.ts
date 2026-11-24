@@ -2,7 +2,8 @@ import { Router, type IRouter } from "express";
 import { db, accounts, confluences, settings } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { GetAnalyticsQueryParams, GetAnalyticsResponse } from "@workspace/api-zod";
-import { summarize, equitySeries, matchesConfluences } from "../lib/calculations";
+import { matchesConfluences } from "../lib/calculations";
+import { summarizeJournal as summarize, journalEquity } from "../lib/journal-r";
 import { loadTrades, filterTrades, parseId, HttpError, type LoadedTrade } from "../lib/edge-data";
 
 const router: IRouter = Router();
@@ -27,7 +28,7 @@ router.get("/analytics", async (req, res): Promise<void> => {
   // Journal performance is trade-only and starts at zero for the selected scope.
   // Preserve legacy balances/cash flows in storage, but never treat them as trading P&L.
   const metrics = summarize(closed);
-  const equity = equitySeries(closed, "0", []);
+  const equity = journalEquity(closed);
   if (closed.length || equity.length) {
     const earliest = equity[0]?.date ?? new Date().toISOString();
     equity.unshift({ date: query.from ? new Date(query.from).toISOString() : new Date(new Date(earliest).getTime() - 1).toISOString(), balance: 0, pnl: 0, cumulativeR: 0, drawdown: 0 });
@@ -59,9 +60,9 @@ router.get("/analytics", async (req, res): Promise<void> => {
   })).filter((g) => g.totalTrades >= min).sort((a, b) => b.totalTrades - a.totalTrades || (b.averageR ?? -Infinity) - (a.averageR ?? -Infinity)).slice(0, 100);
   const warnings = [
     ...(closed.length < 20 ? ["Small sample: fewer than 20 closed trades. Observed associations are not evidence of a repeatable edge."] : []),
-    ...(metrics.rSample < closed.length ? [`${closed.length - metrics.rSample} closed trades have unavailable initial risk and are excluded from R metrics.`] : []),
-    "Win rate excludes breakeven outcomes; expectancy is mean realized R including breakeven outcomes with known risk.",
-    "The journal shows cumulative net trading P&L, not account balances. Starting capital, deposits and withdrawals are excluded. Drawdown is measured from the running trading P&L peak.",
+    ...(metrics.rSample < closed.length ? [`${closed.length - metrics.rSample} historical closed trades have no recorded R and are excluded from result metrics.`] : []),
+    "Win rate excludes breakeven outcomes. Expectancy and profit factor use recorded R, not dollar amounts.",
+    "Journal results and drawdown are measured in R. Historical trades without R remain in the journal but do not contribute to the R curve.",
     "Confluence association does not prove causation. Combination rankings prioritize sample size; no statistical superiority is implied.",
   ];
   res.json(GetAnalyticsResponse.parse({

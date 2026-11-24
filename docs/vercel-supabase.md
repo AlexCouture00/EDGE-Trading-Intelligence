@@ -140,6 +140,21 @@ automation credentials only on its exact origin, never in global headers.
 
 ## 6. Automated verification
 
+### R-only journal
+
+The personal journal accepts net results directly in R and shows R in its
+tables, CSV exports, calendar, analytics and drawdown views. Dollar tracking
+remains in Prop Firm Manager. Execution prices and quantities are optional for
+new R-only trades; symbol, direction and entry/exit timestamps are still required
+when applicable.
+
+This uses the existing `realized_r` and free-text `pnl_source` columns; no schema
+migration is required. New R-only trades have no monetary P&L or initial risk.
+Historical monetary values and recorded executions are preserved when the owner
+edits a trade's R. There is no bulk conversion or deletion. Unavailable historical
+R is not counted as a zero-R result. Profit factor and win/loss statistics in
+the journal use known R outcomes.
+
 ```sh
 pnpm run typecheck
 pnpm run build:production
@@ -316,9 +331,9 @@ It does not choose an arbitrary legacy or prop-linked account for a new trade.
 Entered-trade edits retain the original link and currency. A draft may change
 currency. There is no schema migration, account deletion or historical rewrite.
 
-Journal P&L curves start at zero for the selected trade scope and exclude initial
-capital, deposits and withdrawals. Drawdown is measured against the running
-trading P&L peak, not account balances; balance-relative risk and drawdown
-percentages are not displayed. Prop Firm Manager remains the balance-tracking
-module and keeps its separate accounting rules.
+Journal R curves start at zero for the selected trade scope. Drawdown is measured
+against the running cumulative R peak. Initial capital, monetary results,
+deposits, withdrawals and balance-relative risk are not displayed in the journal.
+Prop Firm Manager remains the monetary balance-tracking module and keeps its
+separate accounting rules.
 Never point this validator at Supabase.

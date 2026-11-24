@@ -709,7 +709,8 @@ components:
         commission: { type: string }
         funding: { type: string }
         slippage: { type: string }
-        pnlSource: { type: string, enum: [broker, calculated] }
+        pnlSource: { type: string, enum: [broker, calculated, r] }
+        resultR: { type: ["string", "null"], description: Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount. }
         strategyId: { type: ["string", "null"] }
         timeframe: { type: string, maxLength: 50 }
         higherTimeframe: { type: string, maxLength: 50 }

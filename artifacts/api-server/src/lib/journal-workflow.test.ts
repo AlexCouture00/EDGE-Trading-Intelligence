@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import express from "express";
 import { z, ZodError } from "zod";
 import { eq, inArray } from "drizzle-orm";
-import { db, pool, accounts, cashFlows, confluences, settings, trades } from "@workspace/db";
+import { db, pool, accounts, cashFlows, confluences, settings, trades, executions } from "@workspace/db";
 import { CreateTradeBody, CreateTradeResponse, GetAnalyticsResponse, GetTradeResponse, ListTradesResponse } from "@workspace/api-zod";
 import tradesRouter from "../routes/edge-trades";
 import analyticsRouter from "../routes/edge-analytics";
@@ -169,6 +169,76 @@ test("trade-only journal preserves historical links and needs no account setup",
       assert.notEqual(changed.accountId, draft.accountId);
       assert.notEqual(changed.accountId, active.id);
       assert.equal((await get(`/trades/${newTrade}`)).accountId, newTradeAccount);
+    });
+    await t.test("R-only results save, reload, edit and delete without creating dollar P&L", async () => {
+      const rInput = {
+        status: "closed", symbol: "RTEST", direction: "long", pnlSource: "r",
+        entryAt: base.entryAt, exitAt: base.exitAt, resultR: "2.5",
+        confluenceIds: [], session: "London",
+      };
+      const row = await create(rInput);
+      assert.equal(row.realizedR, "2.50000000");
+      assert.equal(row.netPnl, null);
+      assert.equal(row.grossPnl, null);
+      assert.equal(row.initialRisk, null);
+      const persisted = await get(`/trades/${row.id}`);
+      assert.equal(persisted.realizedR, "2.50000000");
+      assert.equal(persisted.pnlSource, "r");
+      const report = await get("/analytics?currency=USD&symbol=RTEST");
+      assert.equal(report.metrics.totalTrades, 1);
+      assert.equal(report.metrics.wins, 1);
+      assert.equal(report.metrics.totalR, 2.5);
+      assert.equal(report.bySession[0].totalR, 2.5);
+      assert.equal(report.equity.at(-1)!.cumulativeR, 2.5);
+      assert.equal(report.equity.at(-1)!.pnl, 0);
+      for (const method of ["PUT", "DELETE"]) {
+        assert.equal((await request(`/trades/${row.id}`, method, method === "PUT" ? { ...rInput, resultR: "999" } : undefined, "other")).status, 404);
+      }
+      assert.equal((await get(`/trades/${row.id}`)).realizedR, "2.50000000");
+      for (const invalid of [null, "", "NaN", "Infinity", "1e3", "1.123456789", "100000000000000000000"]) {
+        assert.equal((await request("/trades", "POST", { ...rInput, resultR: invalid })).status, 400);
+      }
+      for (const extra of [{ grossPnl: "25" }, { initialRisk: "100" }, { commission: "1" }, { funding: "x" }]) {
+        assert.equal((await request("/trades", "POST", { ...rInput, ...extra })).status, 400);
+      }
+      const edited = await request(`/trades/${row.id}`, "PUT", { ...rInput, resultR: "-1", lesson: "R-only review" });
+      assert.equal(edited.status, 200, await edited.clone().text());
+      assert.equal((await get(`/trades/${row.id}`)).realizedR, "-1.00000000");
+      assert.equal((await get(`/trades/${row.id}`)).netPnl, null);
+      assert.equal((await request(`/trades/${row.id}`, "PUT", { ...base })).status, 400);
+      assert.equal((await request(`/trades/${row.id}`, "DELETE")).status, 204);
+      assert.equal((await request(`/trades/${row.id}`)).status, 404);
+      const open = await create({ ...rInput, status: "open", resultR: null, exitAt: null });
+      assert.equal(open.realizedR, null);
+      const closed = await request(`/trades/${open.id}`, "PUT", { ...rInput, resultR: "0" });
+      assert.equal(closed.status, 200, await closed.clone().text());
+      assert.equal((await get(`/trades/${open.id}`)).realizedR, "0.00000000");
+      await request(`/trades/${open.id}`, "DELETE");
+    });
+    await t.test("editing historical results in R preserves monetary evidence and recorded fills", async () => {
+      const old = await create({ ...base, commission: "7", funding: "2", slippage: "1" });
+      const before = await get(`/trades/${old.id}`);
+      const originalFills = await db.select().from(executions).where(eq(executions.tradeId, old.id));
+      const response = await request(`/trades/${old.id}`, "PUT", {
+        status: "closed", pnlSource: "r", resultR: "3", symbol: base.symbol,
+        direction: base.direction, entryAt: base.entryAt, exitAt: base.exitAt,
+        entryPrice: base.entryPrice, exitPrice: base.exitPrice, quantity: base.quantity,
+        initialRisk: null, grossPnl: null, commission: "0", funding: "0", slippage: "0",
+      });
+      assert.equal(response.status, 200, await response.clone().text());
+      const after = await get(`/trades/${old.id}`);
+      assert.equal(after.realizedR, "3.00000000");
+      for (const key of ["accountId", "initialRisk", "grossPnl", "netPnl", "commission", "funding", "slippage"] as const) {
+        assert.equal(after[key], before[key], `${key} must be preserved`);
+      }
+      assert.deepEqual(await db.select().from(executions).where(eq(executions.tradeId, old.id)), originalFills);
+      const secondEdit = await request(`/trades/${old.id}`, "PUT", {
+        status: "closed", pnlSource: "r", resultR: "2", symbol: base.symbol,
+        direction: base.direction, entryAt: base.entryAt, exitAt: base.exitAt,
+      });
+      assert.equal(secondEdit.status, 200, await secondEdit.clone().text());
+      assert.equal((await get(`/trades/${old.id}`)).netPnl, before.netPnl);
+      assert.deepEqual(await db.select().from(executions).where(eq(executions.tradeId, old.id)), originalFills);
     });
   } finally {
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));

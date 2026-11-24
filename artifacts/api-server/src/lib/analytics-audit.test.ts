@@ -203,7 +203,7 @@ test("PostgreSQL analytics audit: confluences, currencies, cash flows, edit/dele
       assert.equal(untagged.metrics.totalTrades, 1);
       assert.equal(untagged.equity.at(-1)!.balance, 0);
       assert.equal(all.metrics.maxDrawdownPercent, null);
-      assert.ok(untagged.warnings.some((w) => w.includes("trading P&L")));
+      assert.ok(untagged.warnings.some((w) => w.includes("measured in R")));
     });
     await t.test("date filters preserve millisecond boundaries and reject invalid/reversed dates", async () => {
       const afterExit = await get({ from: "2026-01-01T15:00:00.001Z" });

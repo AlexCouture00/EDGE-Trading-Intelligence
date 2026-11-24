@@ -41,6 +41,23 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
       accountId = account!.id;
     }
     const data = { ...input, accountId };
+    const directR = data.pnlSource === "r";
+    if (existing?.pnlSource === "r" && !directR) throw new HttpError(400, "An R-only trade cannot be converted into a monetary trade.");
+    // Editing R is independent of the original monetary evidence. Preserve that
+    // evidence and any historical fills rather than converting it into fake dollars.
+    const preserveFills = directR && !!existing && data.executions === undefined;
+    if (directR) {
+      if (data.resultR != null) validateDecimal(data.resultR, "Result R");
+      if (data.status === "closed" && data.resultR == null) throw new HttpError(400, "A closed R-only trade requires a result in R.");
+      for (const key of ["commission", "funding", "slippage"] as const) {
+        if (data[key] != null) validateDecimal(data[key]!, key);
+      }
+      if (data.initialRisk != null || data.grossPnl != null || (["commission", "funding", "slippage"] as const).some(k => !D(data[k] ?? "0").eq(0))) {
+        throw new HttpError(400, "R-only trades cannot contain monetary risk, P&L or costs.");
+      }
+    } else if (data.resultR != null) {
+      throw new HttpError(400, "Direct R results require R-only mode.");
+    }
     if (!account) throw new HttpError(404, "Trading account not found.");
     if (input.currency && input.currency !== account.currency) throw new HttpError(400, "An entered trade's currency cannot be changed.");
     if (account.archived && (!existing || existing.accountId !== account.id)) throw new HttpError(400, "Choose an active account.");
@@ -83,6 +100,7 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
       validateDecimal(fill.quantity, "Execution quantity", true);
       validateDecimal(fill.fee ?? "0", "Execution fee");
       if (D(fill.fee ?? "0").lt(0)) throw new HttpError(400, "Execution fees cannot be negative.");
+      if (directR && !D(fill.fee ?? "0").eq(0)) throw new HttpError(400, "R-only results include all costs; monetary execution fees are not accepted.");
       if (fill.timestamp > new Date()) throw new HttpError(400, "Executions cannot be future-dated.");
     }
     const entries = fills.filter((f) => f.kind === "entry");
@@ -106,7 +124,7 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
         data.exitAt = new Date(Math.max(...exits.map((f) => f.timestamp.getTime())));
       }
     }
-    if (data.status !== "draft" && (!data.symbol?.trim() || !data.direction || !data.entryAt || !data.entryPrice || !data.quantity)) {
+    if (data.status !== "draft" && (!data.symbol?.trim() || !data.direction || !data.entryAt || (!directR && (!data.entryPrice || !data.quantity)))) {
       throw new HttpError(400, "Entered trades require symbol, direction, entry time, entry price, and position size.");
     }
     if (data.entryAt && data.entryAt > new Date()) throw new HttpError(400, "Entry time cannot be in the future.");
@@ -124,14 +142,14 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
           .mul(data.multiplier).mul(data.direction === "short" ? -1 : 1))
         : linearPnl(data.entryPrice, data.exitPrice, data.quantity, data.multiplier, data.direction ?? "long");
     }
-    if (data.status === "closed" && data.grossPnl == null) throw new HttpError(400, "Enter verified broker-reported gross P&L, or configure a supported linear calculation.");
+    if (!directR && data.status === "closed" && data.grossPnl == null) throw new HttpError(400, "Enter verified broker-reported gross P&L, or configure a supported linear calculation.");
     const fillFees = fills.reduce((s, f) => s.plus(f.fee ?? "0"), D());
     // Summary commission is additional to per-fill fees. UI currently uses summary-only fees.
-    const netPnl = data.status === "closed" ? netResult(data.grossPnl!, D(data.commission ?? "0").plus(fillFees).toString(), data.funding, data.slippage) : null;
-    const r = netPnl !== null ? realizedR(netPnl, data.initialRisk) : null;
+    const netPnl = directR ? existing?.netPnl ?? null : data.status === "closed" ? netResult(data.grossPnl!, D(data.commission ?? "0").plus(fillFees).toString(), data.funding, data.slippage) : null;
+    const r = directR ? (data.status === "closed" ? money(data.resultR!) : null) : netPnl !== null ? realizedR(netPnl, data.initialRisk) : null;
     if (netPnl !== null) validateDecimal(netPnl, "Net P&L");
     if (r !== null) validateDecimal(r, "Realized R");
-    const { confluenceIds: _ids, executions: _fills, currency: _currency, ...fields } = data;
+    const { confluenceIds: _ids, executions: _fills, currency: _currency, resultR: _resultR, ...fields } = data;
     const values = {
       ...fields,
       symbol: (data.symbol ?? "").trim().toUpperCase(),
@@ -142,6 +160,10 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
       ownerId,
       netPnl, realizedR: r, updatedAt: new Date(),
       ...(data.status !== "closed" ? { grossPnl: data.grossPnl ?? null, exitAt: data.exitAt ?? null } : {}),
+      ...(directR ? {
+        initialRisk: existing?.initialRisk ?? null, grossPnl: existing?.grossPnl ?? null,
+        commission: existing?.commission ?? "0", funding: existing?.funding ?? "0", slippage: existing?.slippage ?? "0",
+      } : {}),
     };
     const [saved] = existing
       ? await tx.update(trades).set(values).where(and(eq(trades.id, existing.id), eq(trades.ownerId, ownerId))).returning()
@@ -156,12 +178,14 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
         categorySnapshot: old?.categorySnapshot ?? c.category, colorSnapshot: old?.colorSnapshot ?? c.color,
       };
     }));
-    await tx.delete(executions).where(eq(executions.tradeId, saved.id));
-    const savedFills = fills.length ? fills : [
-      ...(data.entryAt && data.entryPrice && data.quantity ? [{ kind: "entry", timestamp: data.entryAt, price: data.entryPrice, quantity: data.quantity, fee: "0" }] : []),
-      ...(data.status === "closed" && data.exitAt && data.exitPrice && data.quantity ? [{ kind: "exit", timestamp: data.exitAt, price: data.exitPrice, quantity: data.quantity, fee: "0" }] : []),
-    ];
-    if (savedFills.length) await tx.insert(executions).values(savedFills.map((f) => ({ ...f, tradeId: saved.id })));
+    if (!preserveFills) {
+      await tx.delete(executions).where(eq(executions.tradeId, saved.id));
+      const savedFills = fills.length ? fills : directR ? [] : [
+        ...(data.entryAt && data.entryPrice && data.quantity ? [{ kind: "entry", timestamp: data.entryAt, price: data.entryPrice, quantity: data.quantity, fee: "0" }] : []),
+        ...(data.status === "closed" && data.exitAt && data.exitPrice && data.quantity ? [{ kind: "exit", timestamp: data.exitAt, price: data.exitPrice, quantity: data.quantity, fee: "0" }] : []),
+      ];
+      if (savedFills.length) await tx.insert(executions).values(savedFills.map((f) => ({ ...f, tradeId: saved.id })));
+    }
     return saved.id;
   });
 }
