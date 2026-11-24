@@ -15,3 +15,9 @@ Rules must be customized and confirmed per account, not fetched or fabricated as
 **Why:** The user explicitly required honest limits on rule calculations rather than invented compliance.
 
 **How to apply:** Keep these distinctions in future analytics, account linking and imports. Any richer automation needs data that actually supports the relevant rule and must retain the original balance/cash histories.
+
+The journal workspace should track trades, not account balances. Account and balance management belongs in Prop Firm Manager.
+
+**Why:** The user wants only trade tracking in the journal and already tracks balances with Prop Firm Manager.
+
+**How to apply:** Do not reintroduce journal-facing account setup or balance tracking when simplifying trade workflows. Preserve existing trade history and keep Prop Firm Manager separate.
