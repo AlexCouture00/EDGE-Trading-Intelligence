@@ -128,6 +128,7 @@ async function main() {
       // Recreate the pre-prop-manager release, not merely "latest minus one".
       // These destructive fixture operations only run in the disposable database.
       await client.query("ALTER TABLE public.edge_trades DROP COLUMN volatility");
+      await client.query("ALTER TABLE public.edge_trades DROP COLUMN mfe_r");
       for (const table of ["edge_prop_balances", "edge_prop_challenges", "edge_prop_rules", "edge_prop_expenses", "edge_prop_payouts", "edge_prop_accounts", "edge_prop_firms"]) {
         await client.query(`DROP TABLE public.${table}`);
       }
@@ -145,9 +146,12 @@ async function main() {
       await migrate(drizzle(client), { migrationsFolder });
       const preserved = await client.query("SELECT * FROM public.edge_accounts WHERE id=$1", [canary.rows[0].id]);
       assert.deepEqual(preserved.rows, canary.rows);
-      const preservedTrade = await client.query("SELECT to_jsonb(t)-'volatility' AS original, volatility FROM public.edge_trades t WHERE id=$1", [tradeCanary.rows[0].id]);
+      const preservedTrade = await client.query("SELECT to_jsonb(t)-'volatility'-'mfe_r' AS original, volatility, mfe_r FROM public.edge_trades t WHERE id=$1", [tradeCanary.rows[0].id]);
       assert.deepEqual(preservedTrade.rows[0].original, oldTrade.rows[0].original);
       assert.equal(preservedTrade.rows[0].volatility, null);
+      assert.equal(preservedTrade.rows[0].mfe_r, null);
+      const mfeColumn = await client.query("SELECT data_type,is_nullable,column_default,numeric_precision,numeric_scale FROM information_schema.columns WHERE table_schema='public' AND table_name='edge_trades' AND column_name='mfe_r'");
+      assert.deepEqual(mfeColumn.rows, [{ data_type: "numeric", is_nullable: "YES", column_default: null, numeric_precision: 28, numeric_scale: 8 }]);
       const volatilityColumn = await client.query("SELECT data_type,is_nullable,column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='edge_trades' AND column_name='volatility'");
       assert.deepEqual(volatilityColumn.rows, [{ data_type: "text", is_nullable: "YES", column_default: null }]);
       const notesSecurity = await client.query(

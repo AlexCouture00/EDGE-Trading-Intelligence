@@ -8,6 +8,7 @@
 import type { EquityPoint } from './equityPoint';
 import type { GroupMetrics } from './groupMetrics';
 import type { Metrics } from './metrics';
+import type { MfeAnalytics } from './mfeAnalytics';
 import type { Trade } from './trade';
 
 export interface Analytics {
@@ -22,6 +23,7 @@ export interface Analytics {
   bySession: GroupMetrics[];
   byRegime: GroupMetrics[];
   byVolatility: GroupMetrics[];
+  mfe: MfeAnalytics;
   byEmotion: GroupMetrics[];
   byGrade: GroupMetrics[];
   confluences: GroupMetrics[];

@@ -602,6 +602,13 @@ export interface TradeInput {
      * @nullable
      */
   resultR?: string | null;
+  /**
+     * Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.
+     * @maxLength 40
+     * @nullable
+     * @pattern ^\d+(\.\d{1,8})?$
+     */
+  mfeR?: string | null;
   /** @nullable */
   strategyId?: string | null;
   /** @maxLength 50 */
@@ -709,6 +716,33 @@ export interface EquityPoint {
   drawdown: number;
 }
 
+export interface MfeMetrics {
+  totalTrades: number;
+  recordedCount: number;
+  pairedCount: number;
+  /** @nullable */
+  averageMfeR: number | null;
+  /** @nullable */
+  averageRealizedR: number | null;
+  /**
+     * Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.
+     * @nullable
+     */
+  averageGivebackR: number | null;
+}
+
+export type MfeGroup = MfeMetrics & {
+  id: string;
+  name: string;
+};
+
+export interface MfeAnalytics {
+  overall: MfeMetrics;
+  byRegime: MfeGroup[];
+  byVolatility: MfeGroup[];
+  byContext: MfeGroup[];
+}
+
 export interface Analytics {
   isDemo: boolean;
   currency: string;
@@ -721,6 +755,7 @@ export interface Analytics {
   bySession: GroupMetrics[];
   byRegime: GroupMetrics[];
   byVolatility: GroupMetrics[];
+  mfe: MfeAnalytics;
   byEmotion: GroupMetrics[];
   byGrade: GroupMetrics[];
   confluences: GroupMetrics[];

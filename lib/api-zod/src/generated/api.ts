@@ -1048,6 +1048,10 @@ export const ListTradesQueryParams = zod.object({
 export const listTradesResponseOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const listTradesResponseOneSymbolMax = 30;
 
+export const listTradesResponseOneMfeRMax = 40;
+
+
+export const listTradesResponseOneMfeRRegExp = new RegExp('^\\d+(\\.\\d{1,8})?$');
 export const listTradesResponseOneTimeframeMax = 50;
 
 export const listTradesResponseOneHigherTimeframeMax = 50;
@@ -1115,6 +1119,7 @@ export const ListTradesResponseItem = zod.object({
   "slippage": zod.string().optional(),
   "pnlSource": zod.enum(['broker', 'calculated', 'r']).optional(),
   "resultR": zod.string().nullish().describe('Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.'),
+  "mfeR": zod.string().max(listTradesResponseOneMfeRMax).regex(listTradesResponseOneMfeRRegExp).nullish().describe('Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.'),
   "strategyId": zod.string().nullish(),
   "timeframe": zod.string().max(listTradesResponseOneTimeframeMax).optional(),
   "higherTimeframe": zod.string().max(listTradesResponseOneHigherTimeframeMax).optional(),
@@ -1170,6 +1175,10 @@ export const ListTradesResponse = zod.array(ListTradesResponseItem)
 export const createTradeBodyCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const createTradeBodySymbolMax = 30;
 
+export const createTradeBodyMfeRMax = 40;
+
+
+export const createTradeBodyMfeRRegExp = new RegExp('^\\d+(\\.\\d{1,8})?$');
 export const createTradeBodyTimeframeMax = 50;
 
 export const createTradeBodyHigherTimeframeMax = 50;
@@ -1228,6 +1237,7 @@ export const CreateTradeBody = zod.object({
   "slippage": zod.string().optional(),
   "pnlSource": zod.enum(['broker', 'calculated', 'r']).optional(),
   "resultR": zod.string().nullish().describe('Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.'),
+  "mfeR": zod.string().max(createTradeBodyMfeRMax).regex(createTradeBodyMfeRRegExp).nullish().describe('Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.'),
   "strategyId": zod.string().nullish(),
   "timeframe": zod.string().max(createTradeBodyTimeframeMax).optional(),
   "higherTimeframe": zod.string().max(createTradeBodyHigherTimeframeMax).optional(),
@@ -1260,6 +1270,10 @@ export const CreateTradeBody = zod.object({
 export const createTradeResponseOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const createTradeResponseOneSymbolMax = 30;
 
+export const createTradeResponseOneMfeRMax = 40;
+
+
+export const createTradeResponseOneMfeRRegExp = new RegExp('^\\d+(\\.\\d{1,8})?$');
 export const createTradeResponseOneTimeframeMax = 50;
 
 export const createTradeResponseOneHigherTimeframeMax = 50;
@@ -1327,6 +1341,7 @@ export const CreateTradeResponse = zod.object({
   "slippage": zod.string().optional(),
   "pnlSource": zod.enum(['broker', 'calculated', 'r']).optional(),
   "resultR": zod.string().nullish().describe('Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.'),
+  "mfeR": zod.string().max(createTradeResponseOneMfeRMax).regex(createTradeResponseOneMfeRRegExp).nullish().describe('Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.'),
   "strategyId": zod.string().nullish(),
   "timeframe": zod.string().max(createTradeResponseOneTimeframeMax).optional(),
   "higherTimeframe": zod.string().max(createTradeResponseOneHigherTimeframeMax).optional(),
@@ -1389,6 +1404,10 @@ export const GetTradeQueryParams = zod.object({
 export const getTradeResponseOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getTradeResponseOneSymbolMax = 30;
 
+export const getTradeResponseOneMfeRMax = 40;
+
+
+export const getTradeResponseOneMfeRRegExp = new RegExp('^\\d+(\\.\\d{1,8})?$');
 export const getTradeResponseOneTimeframeMax = 50;
 
 export const getTradeResponseOneHigherTimeframeMax = 50;
@@ -1456,6 +1475,7 @@ export const GetTradeResponse = zod.object({
   "slippage": zod.string().optional(),
   "pnlSource": zod.enum(['broker', 'calculated', 'r']).optional(),
   "resultR": zod.string().nullish().describe('Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.'),
+  "mfeR": zod.string().max(getTradeResponseOneMfeRMax).regex(getTradeResponseOneMfeRRegExp).nullish().describe('Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.'),
   "strategyId": zod.string().nullish(),
   "timeframe": zod.string().max(getTradeResponseOneTimeframeMax).optional(),
   "higherTimeframe": zod.string().max(getTradeResponseOneHigherTimeframeMax).optional(),
@@ -1514,6 +1534,10 @@ export const UpdateTradeParams = zod.object({
 export const updateTradeBodyCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const updateTradeBodySymbolMax = 30;
 
+export const updateTradeBodyMfeRMax = 40;
+
+
+export const updateTradeBodyMfeRRegExp = new RegExp('^\\d+(\\.\\d{1,8})?$');
 export const updateTradeBodyTimeframeMax = 50;
 
 export const updateTradeBodyHigherTimeframeMax = 50;
@@ -1572,6 +1596,7 @@ export const UpdateTradeBody = zod.object({
   "slippage": zod.string().optional(),
   "pnlSource": zod.enum(['broker', 'calculated', 'r']).optional(),
   "resultR": zod.string().nullish().describe('Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.'),
+  "mfeR": zod.string().max(updateTradeBodyMfeRMax).regex(updateTradeBodyMfeRRegExp).nullish().describe('Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.'),
   "strategyId": zod.string().nullish(),
   "timeframe": zod.string().max(updateTradeBodyTimeframeMax).optional(),
   "higherTimeframe": zod.string().max(updateTradeBodyHigherTimeframeMax).optional(),
@@ -1604,6 +1629,10 @@ export const UpdateTradeBody = zod.object({
 export const updateTradeResponseOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const updateTradeResponseOneSymbolMax = 30;
 
+export const updateTradeResponseOneMfeRMax = 40;
+
+
+export const updateTradeResponseOneMfeRRegExp = new RegExp('^\\d+(\\.\\d{1,8})?$');
 export const updateTradeResponseOneTimeframeMax = 50;
 
 export const updateTradeResponseOneHigherTimeframeMax = 50;
@@ -1671,6 +1700,7 @@ export const UpdateTradeResponse = zod.object({
   "slippage": zod.string().optional(),
   "pnlSource": zod.enum(['broker', 'calculated', 'r']).optional(),
   "resultR": zod.string().nullish().describe('Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.'),
+  "mfeR": zod.string().max(updateTradeResponseOneMfeRMax).regex(updateTradeResponseOneMfeRRegExp).nullish().describe('Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.'),
   "strategyId": zod.string().nullish(),
   "timeframe": zod.string().max(updateTradeResponseOneTimeframeMax).optional(),
   "higherTimeframe": zod.string().max(updateTradeResponseOneHigherTimeframeMax).optional(),
@@ -1751,6 +1781,10 @@ export const GetAnalyticsQueryParams = zod.object({
 export const getAnalyticsResponseRecentTradesItemOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getAnalyticsResponseRecentTradesItemOneSymbolMax = 30;
 
+export const getAnalyticsResponseRecentTradesItemOneMfeRMax = 40;
+
+
+export const getAnalyticsResponseRecentTradesItemOneMfeRRegExp = new RegExp('^\\d+(\\.\\d{1,8})?$');
 export const getAnalyticsResponseRecentTradesItemOneTimeframeMax = 50;
 
 export const getAnalyticsResponseRecentTradesItemOneHigherTimeframeMax = 50;
@@ -2000,6 +2034,49 @@ export const GetAnalyticsResponse = zod.object({
   "confluenceIds": zod.array(zod.string()).optional(),
   "sampleWarning": zod.boolean().optional()
 }))),
+  "mfe": zod.object({
+  "overall": zod.object({
+  "totalTrades": zod.number().int(),
+  "recordedCount": zod.number().int(),
+  "pairedCount": zod.number().int(),
+  "averageMfeR": zod.number().nullable(),
+  "averageRealizedR": zod.number().nullable(),
+  "averageGivebackR": zod.number().nullable().describe('Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.')
+}),
+  "byRegime": zod.array(zod.object({
+  "totalTrades": zod.number().int(),
+  "recordedCount": zod.number().int(),
+  "pairedCount": zod.number().int(),
+  "averageMfeR": zod.number().nullable(),
+  "averageRealizedR": zod.number().nullable(),
+  "averageGivebackR": zod.number().nullable().describe('Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.')
+}).and(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))),
+  "byVolatility": zod.array(zod.object({
+  "totalTrades": zod.number().int(),
+  "recordedCount": zod.number().int(),
+  "pairedCount": zod.number().int(),
+  "averageMfeR": zod.number().nullable(),
+  "averageRealizedR": zod.number().nullable(),
+  "averageGivebackR": zod.number().nullable().describe('Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.')
+}).and(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))),
+  "byContext": zod.array(zod.object({
+  "totalTrades": zod.number().int(),
+  "recordedCount": zod.number().int(),
+  "pairedCount": zod.number().int(),
+  "averageMfeR": zod.number().nullable(),
+  "averageRealizedR": zod.number().nullable(),
+  "averageGivebackR": zod.number().nullable().describe('Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.')
+}).and(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+})))
+}),
   "byEmotion": zod.array(zod.object({
   "totalTrades": zod.number().int(),
   "wins": zod.number().int(),
@@ -2147,6 +2224,7 @@ export const GetAnalyticsResponse = zod.object({
   "slippage": zod.string().optional(),
   "pnlSource": zod.enum(['broker', 'calculated', 'r']).optional(),
   "resultR": zod.string().nullish().describe('Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount.'),
+  "mfeR": zod.string().max(getAnalyticsResponseRecentTradesItemOneMfeRMax).regex(getAnalyticsResponseRecentTradesItemOneMfeRRegExp).nullish().describe('Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.'),
   "strategyId": zod.string().nullish(),
   "timeframe": zod.string().max(getAnalyticsResponseRecentTradesItemOneTimeframeMax).optional(),
   "higherTimeframe": zod.string().max(getAnalyticsResponseRecentTradesItemOneHigherTimeframeMax).optional(),

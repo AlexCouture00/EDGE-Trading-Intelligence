@@ -265,6 +265,48 @@ test("trade-only journal preserves historical links and needs no account setup",
       assert.equal((await get(`/trades/${rows[2].id}`)).regime, "News-driven");
       assert.ok((await get("/analytics?symbol=CONTEXTTEST&currency=USD")).byRegime.some(row => row.name === "News-driven"));
     });
+    await t.test("MFE presets save and reload; comparisons, edits, clearing and ownership stay correct", async () => {
+      const input = { status: "closed", pnlSource: "r", symbol: "MFETEST", direction: "long",
+        entryAt: base.entryAt, exitAt: base.exitAt, regime: "Trend Following", volatility: "High", resultR: "1" };
+      for (const mfeR of ["1", "1.5", "2", "3", "4", "5", "7", "10", "0", "1.75"]) {
+        const saved = await create({ ...input, status: "draft", mfeR });
+        assert.equal((await get(`/trades/${saved.id}`)).mfeR, Number(mfeR).toFixed(8));
+      }
+      const a = await create({ ...input, mfeR: "4" });
+      const b = await create({ ...input, mfeR: "2", resultR: "-1" });
+      const c = await create({ ...input, resultR: "10" });
+      const zero = await create({ ...input, mfeR: "0", resultR: "-1", volatility: "Low" });
+      await create({ ...base, symbol: "MFETEST", mfeR: "3", initialRisk: null });
+      let report = await get("/analytics?currency=USD&symbol=MFETEST");
+      assert.equal(report.mfe.overall.totalTrades, 5);
+      assert.equal(report.mfe.overall.recordedCount, 4);
+      assert.equal(report.mfe.overall.pairedCount, 3);
+      assert.equal(report.mfe.overall.averageMfeR, 2);
+      assert.equal(report.mfe.byVolatility.find(g => g.name === "High")!.averageGivebackR, 3);
+      assert.equal(report.mfe.byContext.find(g => g.name === "Trend Following · Low")!.averageMfeR, 0);
+      assert.equal((await get(`/trades/${c.id}`)).mfeR, null);
+      assert.equal((await request(`/trades/${a.id}`, "PUT", { ...input, mfeR: "5", regime: "Counter Trend" })).status, 200);
+      assert.equal((await get(`/trades/${a.id}`)).mfeR, "5.00000000");
+      assert.equal((await get(`/trades/${a.id}`)).realizedR, "1.00000000");
+      assert.equal((await request(`/trades/${a.id}`, "PUT", { ...input, regime: "Counter Trend" })).status, 200);
+      assert.equal((await get(`/trades/${a.id}`)).mfeR, "5.00000000", "omitting MFE preserves it");
+      assert.equal((await request(`/trades/${a.id}`, "PUT", { ...input, mfeR: null })).status, 200);
+      assert.equal((await get(`/trades/${a.id}`)).mfeR, null);
+      for (const mfeR of ["-1", "NaN", "Infinity", "1e2", "", "100000000000000000000", "1.123456789"]) {
+        assert.equal((await request("/trades", "POST", { ...input, mfeR })).status, 400);
+      }
+      assert.equal((await request("/trades", "POST", { ...input, mfeR: 2 })).status, 400);
+      assert.equal((await request(`/trades/${b.id}`, "PUT", { ...input, mfeR: "99" }, "other")).status, 404);
+      assert.equal((await get(`/trades/${b.id}`)).mfeR, "2.00000000");
+      assert.equal((await request(`/trades/${b.id}`, "GET", undefined, "other")).status, 404);
+      assert.deepEqual((await get("/analytics?currency=USD&symbol=MFETEST", "other")).mfe.byContext, []);
+      report = await get("/analytics?currency=USD&symbol=MFETEST&direction=short");
+      assert.equal(report.mfe.overall.totalTrades, 0);
+      assert.equal(report.mfe.overall.averageMfeR, null);
+      assert.deepEqual(report.mfe.byContext, []);
+      assert.equal((await request(`/trades/${zero.id}`, "DELETE")).status, 204);
+      assert.equal((await request(`/trades/${zero.id}`)).status, 404);
+    });
     await t.test("editing historical results in R preserves monetary evidence and recorded fills", async () => {
       const old = await create({ ...base, commission: "7", funding: "2", slippage: "1" });
       const before = await get(`/trades/${old.id}`);
@@ -278,7 +320,7 @@ test("trade-only journal preserves historical links and needs no account setup",
       assert.equal(response.status, 200, await response.clone().text());
       const after = await get(`/trades/${old.id}`);
       assert.equal(after.realizedR, "3.00000000");
-      for (const key of ["accountId", "initialRisk", "grossPnl", "netPnl", "commission", "funding", "slippage"] as const) {
+      for (const key of ["accountId", "entryPrice", "exitPrice", "stopLoss", "takeProfit", "initialRisk", "grossPnl", "netPnl", "commission", "funding", "slippage"] as const) {
         assert.equal(after[key], before[key], `${key} must be preserved`);
       }
       assert.deepEqual(await db.select().from(executions).where(eq(executions.tradeId, old.id)), originalFills);

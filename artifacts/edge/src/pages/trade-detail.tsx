@@ -86,6 +86,7 @@ export default function TradeDetail() {
             )}
           </Panel>
           <Panel title="Review">
+            <div className="mb-4"><KV k="MFE (R) — while open" v={t.mfeR == null ? "Not recorded" : <R v={t.mfeR} />} /></div>
             {notes.length === 0 ? <p className="text-sm text-muted-foreground">No written review yet.{canWrite && " Add one while the trade is still fresh."}</p> : (
               <div className="space-y-5">
                 {notes.map(([k, v]) => <div key={k}><div className="eyebrow mb-1.5">{k}</div><p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-foreground/90">{v}</p></div>)}

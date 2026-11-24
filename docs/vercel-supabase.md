@@ -204,6 +204,55 @@ application publishing are separate operations; use the current workflow in sect
 on a disposable local database, including preservation of an existing account.
 No Supabase migration has been authorized merely by adding these files.
 
+## MFE tracking: additive migration
+
+MFE is the manually recorded maximum favorable excursion in R while a trade
+was open, not a price-based reconstruction or an observation after exit.
+The form offers 1, 1.5, 2, 3, 4, 5, 7 and 10R shortcuts and accepts exact
+nonnegative decimal values. Unknown MFE is null, never inferred as zero.
+Existing execution prices remain in storage even though the four price fields
+are no longer presented in the logging form.
+
+The owner approved this single additional column for both the existing
+Supabase project and the separate Replit development database:
+
+```sql
+ALTER TABLE "edge_trades" ADD COLUMN "mfe_r" numeric(28, 8);
+```
+
+The generated fifth Drizzle migration contains only that statement. Run the
+maintenance command `pnpm --filter @workspace/db run migrate:mfe` only after
+approval, with `EDGE_CONFIRM_MFE_MIGRATION=add-mfe-column` and
+`EXPECTED_SUPABASE_PROJECT_REF` set to the confirmed project reference.
+It uses `MIGRATION_DATABASE_URL`, never the development connection as a fallback,
+requires the Session pooler on port 5432 and verified TLS, validates all four
+preceding migration hashes, and refuses any other pending schema change.
+Afterwards it verifies five matching migrations, the nullable numeric type,
+unchanged historical trade data, and unchanged RLS and access restrictions.
+It logs only safe status and error categories; it never runs on build/startup.
+The historical volatility-only command below intentionally refuses this newer
+release and must not be used to apply MFE.
+
+Development retains its separately approved schema: add only this column there.
+Do not run the entire migration set against the older Replit development schema
+or mark skipped migrations as applied.
+
+Performance reports closed trades in the current owner/filter scope. MFE
+averages, realized R averages and average gaps all use the identical subset
+with both MFE and realized R recorded. Coverage counts remain explicit.
+Breakdowns include regime, volatility, and their combined context.
+Gap means MFE minus realized R; it is not an executable return or evidence
+that a different exit rule would improve performance. Preserve negative
+gaps if approximate manual observations understate realized R.
+
+This database approval is separate from approval to publish the application.
+
+Applied after the owner's explicit approval to both Supabase and the separate
+development database. The Supabase command verified certificate-authorized TLS,
+five matching migration entries, unchanged historical trade contents and unchanged
+security restrictions on all 16 EDGE tables. The development postcheck confirmed
+only the nullable numeric(28,8) field. No trade was assigned an MFE automatically.
+
 ## Market regime and volatility: approved additive migration applied
 
 The journal offers **Trend Following**, **Counter Trend** and **Ranging** for new

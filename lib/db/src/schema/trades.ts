@@ -28,6 +28,7 @@ export const trades = pgTable("edge_trades", {
   pnlSource: text("pnl_source").notNull().default("broker"),
   netPnl: decimal("net_pnl"),
   realizedR: decimal("realized_r"),
+  mfeR: decimal("mfe_r"),
   timeframe: text("timeframe").notNull().default("H4"),
   higherTimeframe: text("higher_timeframe").notNull().default("D1"),
   session: text("session").notNull().default("London"),

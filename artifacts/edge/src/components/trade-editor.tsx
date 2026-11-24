@@ -27,6 +27,7 @@ const FEES = ["commission", "funding", "slippage"] as const;
 const SESSIONS = ["Asia", "London", "New York", "London/NY overlap"];
 const REGIMES = ["Trend Following", "Counter Trend", "Ranging"];
 const VOLATILITIES = ["High", "Medium", "Low"];
+const MFE_PRESETS = ["1", "1.5", "2", "3", "4", "5", "7", "10"];
 
 function toLocal(iso?: string | null, timezone = "UTC") {
   if (!iso) return "";
@@ -45,6 +46,7 @@ function fromTrade(t?: Trade, timezone = "UTC"): F {
   f.direction = t?.direction ?? "";
   f.pnlSource = "r";
   f.resultR = t?.realizedR ?? "";
+  f.mfeR = t?.mfeR ?? "";
   f.volatility = t?.volatility ?? "";
   f.strategyId = t?.strategyId ?? "";
   f.grade = t?.grade ?? "";
@@ -130,6 +132,7 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
     const e: F = {};
     for (const k of [...NUMS, ...FEES]) if (f[k] && !DEC.test(f[k])) e[k] = "Number only";
     if (directR && f.resultR && !/^-?\d+(\.\d{1,8})?$/.test(f.resultR)) e.resultR = "Enter R with up to 8 decimal places";
+    if (f.mfeR && (!/^\d+(\.\d{1,8})?$/.test(f.mfeR) || Number(f.mfeR) >= 1e20)) e.mfeR = "Enter a nonnegative MFE in R with up to 8 decimal places";
     if (f.chartUrl && !/^https:\/\//.test(f.chartUrl)) e.chartUrl = "Must be a valid HTTPS URL";
     if (status !== "draft") {
       if (!f.symbol.trim()) e.symbol = "Required";
@@ -154,6 +157,7 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
     const iso = (v: string) => (v ? fromZonedTime(v, timezone).toISOString() : null);
     const d: TradeInput = { currency: f.currency, status };
     d.volatility = (f.volatility || null) as TradeInput["volatility"];
+    d.mfeR = f.mfeR || null;
     for (const k of TEXT) (d as unknown as Record<string, string>)[k] = k === "symbol" ? f.symbol.trim().toUpperCase() : f[k].trim();
     for (const k of NUMS) (d as unknown as Record<string, string | null>)[k] = f[k] ? f[k] : null;
     for (const k of FEES) (d as unknown as Record<string, string>)[k] = f[k] || "0";
@@ -266,10 +270,6 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
           <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
             <Field label="Entry time" className="col-span-2" error={errors.entryAt}><Input type="datetime-local" value={f.entryAt} onChange={(e) => set("entryAt", e.target.value)} className={cn(inp, "num")} data-testid="input-entry-at" /></Field>
             <Field label={status === "closed" ? "Exit time" : "Exit time (when closed)"} className="col-span-2" error={errors.exitAt}><Input type="datetime-local" value={f.exitAt} onChange={(e) => set("exitAt", e.target.value)} disabled={status !== "closed"} className={cn(inp, "num")} data-testid="input-exit-at" /></Field>
-            <Field label="Entry price" error={errors.entryPrice}><Input value={f.entryPrice} inputMode="decimal" onChange={(e) => set("entryPrice", e.target.value)} className={cn(inp, "num")} data-testid="input-entry-price" /></Field>
-            <Field label="Exit price" error={errors.exitPrice}><Input value={f.exitPrice} inputMode="decimal" onChange={(e) => set("exitPrice", e.target.value)} className={cn(inp, "num")} data-testid="input-exit-price" /></Field>
-            <Field label="Stop loss" error={errors.stopLoss}><Input value={f.stopLoss} inputMode="decimal" onChange={(e) => set("stopLoss", e.target.value)} className={cn(inp, "num")} data-testid="input-stop-loss" /></Field>
-            <Field label="Take profit" error={errors.takeProfit}><Input value={f.takeProfit} inputMode="decimal" onChange={(e) => set("takeProfit", e.target.value)} className={cn(inp, "num")} data-testid="input-take-profit" /></Field>
             <Field label="Quantity" error={errors.quantity}><Input value={f.quantity} inputMode="decimal" onChange={(e) => set("quantity", e.target.value)} placeholder="lots / units" className={cn(inp, "num")} data-testid="input-quantity" /></Field>
           </div>
           {initial?.executions && initial.executions.length > 0 && (
@@ -286,6 +286,17 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
           <Field label="Net result (R)" error={errors.resultR} hint={initial?.status === "closed" && initial.realizedR === null && initial.pnlSource !== "r" ? "No historical R was recorded. Leave blank to preserve it as unavailable, or enter your verified result in R." : "Enter the final result after costs: 2 for +2R, -1 for -1R, or 0 for breakeven. Historical monetary records are preserved internally."}>
             <Input value={f.resultR} disabled={status !== "closed"} inputMode="decimal" onChange={e => set("resultR", e.target.value)} placeholder="2.00" className={cn(inp, "num max-w-xs")} data-testid="input-result-r" />
           </Field>
+          <div className="mt-5 space-y-2">
+            <Field label="MFE — maximum favorable excursion (R)" error={errors.mfeR} hint="Maximum reached in your favor while the trade was open, not after exit. Optional: leave blank if unknown; enter 0 only if it never moved in your favor.">
+              <Input value={f.mfeR} inputMode="decimal" onChange={e => set("mfeR", e.target.value)} placeholder="Not recorded" className={cn(inp, "num max-w-xs")} data-testid="input-mfe-r" />
+            </Field>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="MFE presets">
+              {MFE_PRESETS.map(value => <button key={value} type="button" aria-pressed={!!f.mfeR && Number(f.mfeR) === Number(value)} onClick={() => set("mfeR", value)} className={cn("h-8 px-3 rounded-md border text-xs num transition-colors", f.mfeR && Number(f.mfeR) === Number(value) ? "border-foreground/35 bg-secondary text-foreground" : "border-input text-muted-foreground hover:text-foreground")} data-testid={`button-mfe-${value}`}>{value}R</button>)}
+              <button type="button" onClick={() => set("mfeR", "")} className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground" data-testid="button-clear-mfe">Clear</button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Presets are shortcuts; enter the exact MFE when known. Use the same observation method consistently.</p>
+            {f.mfeR && f.resultR && Number(f.mfeR) < Number(f.resultR) && <Caution>MFE is below your realized R. Check the value or whether the preset understates the actual excursion.</Caution>}
+          </div>
         </Sec>
 
         <Sec id="confluences" n={4} title="Confluences" desc={`${conf.length} selected`}>

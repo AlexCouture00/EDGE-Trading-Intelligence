@@ -1,5 +1,6 @@
 import { useGetAnalytics } from "@workspace/api-client-react";
 import { FilterBar } from "@/components/filter-bar";
+import { MfePerformance } from "@/components/mfe-performance";
 import { GroupBars, RChart } from "@/components/charts";
 import { Caution, Empty, ErrorBlock, GroupTable, LoadingBlock, PageHeader, Panel, Stat, StatStrip } from "@/components/kit";
 import { useFilters } from "@/lib/filters";
@@ -30,6 +31,7 @@ export default function Performance() {
             <Stat label="Total R" value={rFmt(a.metrics.rSample ? a.metrics.totalR : null)} valueClass={tone(a.metrics.totalR)} />
             <Stat label="Avg hold" value={hours(a.metrics.averageHoldHours)} />
           </StatStrip>
+          <MfePerformance data={a.mfe} />
           {a.warnings.map((w, i) => <Caution key={i}>{w}</Caution>)}
           <div className="grid gap-4 xl:grid-cols-2">
             <Panel title="Cumulative R" meta={`${a.metrics.rSample} of ${a.metrics.totalTrades} trades have recorded R`}><RChart data={a.equity} height={240} /></Panel>

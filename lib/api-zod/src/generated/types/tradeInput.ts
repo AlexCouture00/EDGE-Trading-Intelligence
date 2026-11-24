@@ -55,6 +55,13 @@ export interface TradeInput {
      * @nullable
      */
   resultR?: string | null;
+  /**
+     * Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result.
+     * @maxLength 40
+     * @nullable
+     * @pattern ^\d+(\.\d{1,8})?$
+     */
+  mfeR?: string | null;
   /** @nullable */
   strategyId?: string | null;
   /** @maxLength 50 */

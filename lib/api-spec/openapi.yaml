@@ -711,6 +711,7 @@ components:
         slippage: { type: string }
         pnlSource: { type: string, enum: [broker, calculated, r] }
         resultR: { type: ["string", "null"], description: Direct net result in R. Required for closed R-only trades. Never interpreted as a currency amount. }
+        mfeR: { type: ["string", "null"], maxLength: 40, pattern: '^\d+(\.\d{1,8})?$', description: Maximum favorable excursion in R while the trade was open. Optional nonnegative decimal; null means not recorded. Independent of the realized result. }
         strategyId: { type: ["string", "null"] }
         timeframe: { type: string, maxLength: 50 }
         higherTimeframe: { type: string, maxLength: 50 }
@@ -789,9 +790,35 @@ components:
         pnl: { type: number }
         cumulativeR: { type: number }
         drawdown: { type: number }
+    MfeMetrics:
+      type: object
+      required: [totalTrades, recordedCount, pairedCount, averageMfeR, averageRealizedR, averageGivebackR]
+      properties:
+        totalTrades: { type: integer }
+        recordedCount: { type: integer }
+        pairedCount: { type: integer }
+        averageMfeR: { type: ["number", "null"] }
+        averageRealizedR: { type: ["number", "null"] }
+        averageGivebackR: { type: ["number", "null"], description: Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit. }
+    MfeGroup:
+      allOf:
+        - $ref: "#/components/schemas/MfeMetrics"
+        - type: object
+          required: [id, name]
+          properties:
+            id: { type: string }
+            name: { type: string }
+    MfeAnalytics:
+      type: object
+      required: [overall, byRegime, byVolatility, byContext]
+      properties:
+        overall: { $ref: "#/components/schemas/MfeMetrics" }
+        byRegime: { type: array, items: { $ref: "#/components/schemas/MfeGroup" } }
+        byVolatility: { type: array, items: { $ref: "#/components/schemas/MfeGroup" } }
+        byContext: { type: array, items: { $ref: "#/components/schemas/MfeGroup" } }
     Analytics:
       type: object
-      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, bySession, byRegime, byVolatility, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
+      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, bySession, byRegime, byVolatility, mfe, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
       properties:
         isDemo: { type: boolean }
         currency: { type: string }
@@ -804,6 +831,7 @@ components:
         bySession: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byRegime: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byVolatility: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        mfe: { $ref: "#/components/schemas/MfeAnalytics" }
         byEmotion: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byGrade: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         confluences: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }

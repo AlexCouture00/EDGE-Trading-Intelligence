@@ -41,6 +41,10 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
       accountId = account!.id;
     }
     const data = { ...input, accountId };
+    if (data.mfeR != null) {
+      validateDecimal(data.mfeR, "MFE R");
+      if (D(data.mfeR).lt(0)) throw new HttpError(400, "MFE R cannot be negative.");
+    }
     const regimes = ["", "Trend Following", "Counter Trend", "Ranging"];
     if (data.regime !== undefined && !regimes.includes(data.regime) && data.regime !== existing?.regime) {
       throw new HttpError(400, "Choose Trend Following, Counter Trend or Ranging. Historical regimes can only be preserved on their original trade.");
