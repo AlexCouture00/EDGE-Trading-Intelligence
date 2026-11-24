@@ -1,0 +1,1 @@
+ALTER TABLE "edge_trades" ADD COLUMN "volatility" text;

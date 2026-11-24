@@ -716,6 +716,7 @@ components:
         higherTimeframe: { type: string, maxLength: 50 }
         session: { type: string, maxLength: 50 }
         regime: { type: string, maxLength: 100 }
+        volatility: { type: ["string", "null"], enum: [High, Medium, Low, null] }
         emotion: { type: string, maxLength: 100 }
         confidence: { type: integer, minimum: 1, maximum: 5 }
         grade: { type: string, enum: [A, B, C, D, F] }
@@ -790,7 +791,7 @@ components:
         drawdown: { type: number }
     Analytics:
       type: object
-      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, bySession, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
+      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, bySession, byRegime, byVolatility, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
       properties:
         isDemo: { type: boolean }
         currency: { type: string }
@@ -801,6 +802,8 @@ components:
         byStrategy: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byDirection: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         bySession: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byRegime: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byVolatility: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byEmotion: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byGrade: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         confluences: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }

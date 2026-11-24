@@ -46,6 +46,14 @@ export default function Performance() {
             <GroupTable rows={a.bySession} currency={cur} label="Session" />
             <p className="mt-3 text-xs text-muted-foreground">Compare trade count, win rate and R by session. Small samples are flagged; results become more meaningful as you log more trades.</p>
           </Panel>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Panel title="By market regime" meta="Closed trades · current filters · results in R">
+              <GroupTable rows={a.byRegime ?? []} currency={cur} label="Market regime" />
+            </Panel>
+            <Panel title="By volatility" meta="Closed trades · current filters · results in R">
+              <GroupTable rows={a.byVolatility ?? []} currency={cur} label="Volatility" />
+            </Panel>
+          </div>
         </div>
       )}
     </div>

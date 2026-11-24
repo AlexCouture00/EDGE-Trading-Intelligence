@@ -72,6 +72,9 @@ router.get("/analytics", async (req, res): Promise<void> => {
     byStrategy: groups((t) => t.strategyId ?? "Unassigned", (t) => t.strategyName ?? "Unassigned"),
     byDirection: groups((t) => t.direction),
     bySession: groups((t) => t.session.trim() || "Not recorded").sort((a, b) => a.name.localeCompare(b.name)),
+    byRegime: groups((t) => t.regime.trim() || "Not recorded").sort((a, b) => a.name.localeCompare(b.name)),
+    byVolatility: groups((t) => t.volatility || "Not recorded").sort((a, b) =>
+      ["High", "Medium", "Low", "Not recorded"].indexOf(a.name) - ["High", "Medium", "Low", "Not recorded"].indexOf(b.name)),
     byEmotion: groups((t) => t.emotion || "Not recorded"),
     byGrade: groups((t) => t.grade || "Not graded"),
     confluences: allConfluences.filter((c) => !c.archived).map((c) => ({

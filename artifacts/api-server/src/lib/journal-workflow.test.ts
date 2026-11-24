@@ -215,6 +215,56 @@ test("trade-only journal preserves historical links and needs no account setup",
       assert.equal((await get(`/trades/${open.id}`)).realizedR, "0.00000000");
       await request(`/trades/${open.id}`, "DELETE");
     });
+    await t.test("market regime and volatility save, reload, clear and aggregate in R", async () => {
+      const rows = [];
+      const contextInput = {
+        status: "closed", pnlSource: "r", symbol: "CONTEXTTEST", direction: "long",
+        entryAt: base.entryAt, exitAt: base.exitAt, session: "London",
+      };
+      for (const [regime, volatility, resultR] of [
+        ["Trend Following", "High", "2"], ["Counter Trend", "Medium", "-1"], ["Ranging", "Low", "0"],
+      ]) {
+        const saved = await create({ ...contextInput, regime, volatility, resultR });
+        rows.push(saved);
+        const loaded = await get(`/trades/${saved.id}`);
+        assert.equal(loaded.regime, regime);
+        assert.equal(loaded.volatility, volatility);
+      }
+      let report = await get("/analytics?currency=USD&symbol=CONTEXTTEST");
+      assert.equal(report.byRegime.find(row => row.name === "Trend Following")!.totalR, 2);
+      assert.equal(report.byRegime.find(row => row.name === "Counter Trend")!.totalR, -1);
+      assert.equal(report.byRegime.find(row => row.name === "Ranging")!.totalR, 0);
+      assert.deepEqual(report.byVolatility.map(row => row.name), ["High", "Medium", "Low"]);
+      assert.equal(report.byVolatility[0].winRate, 100);
+      assert.equal(report.byVolatility[1].losses, 1);
+      assert.equal(report.byVolatility[2].breakeven, 1);
+      const edit = await request(`/trades/${rows[0].id}`, "PUT", { ...contextInput, resultR: "2", regime: "Counter Trend", volatility: "Low" });
+      assert.equal(edit.status, 200, await edit.clone().text());
+      report = await get("/analytics?currency=USD&symbol=CONTEXTTEST");
+      assert.equal(report.byVolatility.find(row => row.name === "Low")!.totalTrades, 2);
+      assert.equal(report.byVolatility.find(row => row.name === "Low")!.totalR, 2);
+      assert.equal(report.byRegime.find(row => row.name === "Counter Trend")!.totalR, 1);
+      const clear = await request(`/trades/${rows[0].id}`, "PUT", { ...contextInput, resultR: "2", regime: "", volatility: null });
+      assert.equal(clear.status, 200, await clear.clone().text());
+      assert.equal((await get(`/trades/${rows[0].id}`)).volatility, null);
+      report = await get("/analytics?currency=USD&symbol=CONTEXTTEST");
+      assert.equal(report.byRegime.find(row => row.name === "Not recorded")!.totalR, 2);
+      assert.equal(report.byVolatility.find(row => row.name === "Not recorded")!.totalR, 2);
+      await create({ ...contextInput, status: "open", symbol: "CONTEXTTEST", regime: "Ranging", volatility: "High" });
+      const scoped = await get("/analytics?currency=USD&symbol=CONTEXTTEST&direction=short");
+      assert.deepEqual(scoped.byRegime, []);
+      assert.deepEqual(scoped.byVolatility, []);
+      for (const invalid of [{ regime: "News-driven" }, { regime: "High volatility" }, { regime: "Trending" }, { volatility: "Extreme" }, { volatility: "" }]) {
+        assert.equal((await request("/trades", "POST", { ...contextInput, resultR: "1", ...invalid })).status, 400);
+      }
+      assert.equal((await request(`/trades/${rows[1].id}`, "PUT", { ...contextInput, resultR: "99", regime: "Ranging", volatility: "Low" }, "other")).status, 404);
+      assert.equal((await get(`/trades/${rows[1].id}`)).volatility, "Medium");
+      assert.deepEqual((await get("/analytics?currency=USD&symbol=CONTEXTTEST", "other")).byVolatility, []);
+      await db.update(trades).set({ regime: "News-driven" }).where(eq(trades.id, rows[2].id));
+      assert.equal((await request(`/trades/${rows[2].id}`, "PUT", { ...contextInput, regime: "News-driven", resultR: "0" })).status, 200);
+      assert.equal((await get(`/trades/${rows[2].id}`)).regime, "News-driven");
+      assert.ok((await get("/analytics?symbol=CONTEXTTEST&currency=USD")).byRegime.some(row => row.name === "News-driven"));
+    });
     await t.test("editing historical results in R preserves monetary evidence and recorded fills", async () => {
       const old = await create({ ...base, commission: "7", funding: "2", slippage: "1" });
       const before = await get(`/trades/${old.id}`);

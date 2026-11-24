@@ -11,6 +11,7 @@ import type { TradeInputDirection } from './tradeInputDirection';
 import type { TradeInputGrade } from './tradeInputGrade';
 import type { TradeInputPnlSource } from './tradeInputPnlSource';
 import type { TradeInputStatus } from './tradeInputStatus';
+import type { TradeInputVolatility } from './tradeInputVolatility';
 
 export interface TradeInput {
   /** Optional legacy link. Omit to preserve an existing trade link or automatically resolve an internal journal record for new trades. */
@@ -64,6 +65,8 @@ export interface TradeInput {
   session?: string;
   /** @maxLength 100 */
   regime?: string;
+  /** @nullable */
+  volatility?: TradeInputVolatility;
   /** @maxLength 100 */
   emotion?: string;
   /**

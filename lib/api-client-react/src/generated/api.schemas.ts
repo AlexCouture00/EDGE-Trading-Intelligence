@@ -537,6 +537,18 @@ export const TradeInputPnlSource = {
   r: 'r',
 } as const;
 
+/**
+ * @nullable
+ */
+export type TradeInputVolatility = typeof TradeInputVolatility[keyof typeof TradeInputVolatility] | null;
+
+
+export const TradeInputVolatility = {
+  High: 'High',
+  Medium: 'Medium',
+  Low: 'Low',
+} as const;
+
 export type TradeInputGrade = typeof TradeInputGrade[keyof typeof TradeInputGrade];
 
 
@@ -600,6 +612,8 @@ export interface TradeInput {
   session?: string;
   /** @maxLength 100 */
   regime?: string;
+  /** @nullable */
+  volatility?: TradeInputVolatility;
   /** @maxLength 100 */
   emotion?: string;
   /**
@@ -705,6 +719,8 @@ export interface Analytics {
   byStrategy: GroupMetrics[];
   byDirection: GroupMetrics[];
   bySession: GroupMetrics[];
+  byRegime: GroupMetrics[];
+  byVolatility: GroupMetrics[];
   byEmotion: GroupMetrics[];
   byGrade: GroupMetrics[];
   confluences: GroupMetrics[];

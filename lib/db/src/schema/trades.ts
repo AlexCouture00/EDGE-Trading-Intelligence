@@ -32,6 +32,7 @@ export const trades = pgTable("edge_trades", {
   higherTimeframe: text("higher_timeframe").notNull().default("D1"),
   session: text("session").notNull().default("London"),
   regime: text("regime").notNull().default(""),
+  volatility: text("volatility"),
   emotion: text("emotion").notNull().default(""),
   confidence: integer("confidence"),
   grade: text("grade"),

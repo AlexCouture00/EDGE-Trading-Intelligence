@@ -109,6 +109,7 @@ export default function TradeDetail() {
           </Panel>
           <Panel title="Context and behavior">
             <KV k="Timeframe" v={[t.timeframe, t.higherTimeframe].filter(Boolean).join(" / ") || null} /><KV k="Session" v={t.session || null} /><KV k="Regime" v={t.regime || null} />
+            <KV k="Volatility" v={t.volatility ?? null} />
             <KV k="Emotion" v={t.emotion || null} /><KV k="Confidence" v={t.confidence ? `${t.confidence}/5` : null} /><KV k="Grade" v={t.grade} />
             <KV k="Followed plan" v={t.followedPlan === undefined ? null : t.followedPlan ? "Yes" : "No"} />
             {t.behavioralTags && t.behavioralTags.length > 0 && <div className="flex flex-wrap gap-1 pt-3">{t.behavioralTags.map((b) => <span key={b} className="rounded-sm bg-secondary px-1.5 py-0.5 text-[11px]">{b}</span>)}</div>}

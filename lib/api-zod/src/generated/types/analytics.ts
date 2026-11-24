@@ -20,6 +20,8 @@ export interface Analytics {
   byStrategy: GroupMetrics[];
   byDirection: GroupMetrics[];
   bySession: GroupMetrics[];
+  byRegime: GroupMetrics[];
+  byVolatility: GroupMetrics[];
   byEmotion: GroupMetrics[];
   byGrade: GroupMetrics[];
   confluences: GroupMetrics[];

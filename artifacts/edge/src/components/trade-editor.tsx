@@ -25,6 +25,8 @@ const TEXT = ["symbol", "timeframe", "higherTimeframe", "session", "regime", "em
 const NUMS = ["entryPrice", "exitPrice", "stopLoss", "takeProfit", "quantity", "multiplier", "initialRisk", "grossPnl"] as const;
 const FEES = ["commission", "funding", "slippage"] as const;
 const SESSIONS = ["Asia", "London", "New York", "London/NY overlap"];
+const REGIMES = ["Trend Following", "Counter Trend", "Ranging"];
+const VOLATILITIES = ["High", "Medium", "Low"];
 
 function toLocal(iso?: string | null, timezone = "UTC") {
   if (!iso) return "";
@@ -43,6 +45,7 @@ function fromTrade(t?: Trade, timezone = "UTC"): F {
   f.direction = t?.direction ?? "";
   f.pnlSource = "r";
   f.resultR = t?.realizedR ?? "";
+  f.volatility = t?.volatility ?? "";
   f.strategyId = t?.strategyId ?? "";
   f.grade = t?.grade ?? "";
   f.confidence = t?.confidence ? String(t.confidence) : "";
@@ -150,6 +153,7 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
   function build(status: TradeInputStatus): TradeInput {
     const iso = (v: string) => (v ? fromZonedTime(v, timezone).toISOString() : null);
     const d: TradeInput = { currency: f.currency, status };
+    d.volatility = (f.volatility || null) as TradeInput["volatility"];
     for (const k of TEXT) (d as unknown as Record<string, string>)[k] = k === "symbol" ? f.symbol.trim().toUpperCase() : f[k].trim();
     for (const k of NUMS) (d as unknown as Record<string, string | null>)[k] = f[k] ? f[k] : null;
     for (const k of FEES) (d as unknown as Record<string, string>)[k] = f[k] || "0";
@@ -313,8 +317,13 @@ export function TradeEditor({ initial }: { initial?: Trade }) {
               ...SESSIONS.map((value) => ({ value, label: value })),
               ...(initial?.session && !SESSIONS.includes(initial.session) ? [{ value: initial.session, label: `${initial.session} (saved session)`, disabled: true }] : []),
             ]} placeholder="Choose session" allowNone noneLabel="Not recorded" className={inp} testId="input-session" /></Field>
-            <Field label="Regime"><Input value={f.regime} onChange={(e) => set("regime", e.target.value)} placeholder="Trending" list="regimes" className={inp} data-testid="input-regime" /></Field>
-            <datalist id="regimes"><option value="Trending" /><option value="Ranging" /><option value="High volatility" /><option value="News-driven" /></datalist>
+            <Field label="Market regime"><NSelect value={f.regime} onChange={v => set("regime", v)} options={[
+              ...REGIMES.map(value => ({ value, label: value })),
+              ...(initial?.regime && !REGIMES.includes(initial.regime) ? [{ value: initial.regime, label: `${initial.regime} (saved regime)`, disabled: true }] : []),
+            ]} placeholder="Choose market regime" allowNone noneLabel="Not recorded" className={inp} testId="input-regime" /></Field>
+            <Field label="Volatility"><NSelect value={f.volatility} onChange={v => set("volatility", v)}
+              options={VOLATILITIES.map(value => ({ value, label: value }))} placeholder="Choose volatility"
+              allowNone noneLabel="Not recorded" className={inp} testId="input-volatility" /></Field>
           </div>
         </Sec>
 

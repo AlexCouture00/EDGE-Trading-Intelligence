@@ -11,8 +11,9 @@
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "generate": "drizzle-kit generate --config ./drizzle.config.ts",
     "initialize:external": "tsx scripts/initialize-external.ts",
+    "migrate:volatility": "tsx scripts/apply-volatility.ts",
     "validate:migrations": "tsx scripts/validate-migrations.ts",
-    "typecheck:scripts": "tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --esModuleInterop --skipLibCheck --strict --types node scripts/initialize-external.ts scripts/validate-migrations.ts",
+    "typecheck:scripts": "tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --esModuleInterop --skipLibCheck --strict --types node scripts/initialize-external.ts scripts/validate-migrations.ts scripts/apply-volatility.ts",
     "test": "tsx --test src/*.test.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
   },

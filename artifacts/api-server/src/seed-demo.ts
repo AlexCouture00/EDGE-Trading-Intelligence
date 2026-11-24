@@ -40,7 +40,7 @@ await db.transaction(async (tx) => {
       stopLoss: money(entry.minus(D(risk).div(D(quantity).mul(multiplier)).mul(direction === "short" ? -1 : 1))),
       initialRisk: risk, grossPnl: gross, commission: "7.5", pnlSource: "broker",
       netPnl: netResult(gross, "7.5"), realizedR: realizedR(net, risk), timeframe: i % 2 ? "H1" : "H4",
-      higherTimeframe: "D1", regime: i % 4 === 0 ? "Ranging" : "Trending", session: i % 3 ? "London" : "New York",
+      higherTimeframe: "D1", regime: i % 4 === 0 ? "Ranging" : "Trend Following", volatility: (["High", "Medium", "Low"] as const)[i % 3], session: i % 3 ? "London" : "New York",
       emotion: i % 6 === 0 ? "Anxious" : "Calm", confidence: i % 4 + 2, grade: i % 6 === 0 ? "C" : "A",
       followedPlan: i % 6 !== 0, behavioralTags: i % 6 === 0 ? ["Early exit"] : [],
       thesis: "DEMO EXAMPLE — Higher-timeframe structure aligned with a retracement into a key level.",

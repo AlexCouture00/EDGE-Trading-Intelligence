@@ -24,7 +24,7 @@ function exportCsv(trades: Trade[], scope: string) {
     ["direction", (t) => t.direction], ["strategy", (t) => t.strategyName], ["entryAtUtc", (t) => t.entryAt], ["exitAtUtc", (t) => t.exitAt], ["entryPrice", (t) => t.entryPrice], ["exitPrice", (t) => t.exitPrice],
     ["stopLoss", (t) => t.stopLoss], ["takeProfit", (t) => t.takeProfit], ["quantity", (t) => t.quantity],
     ["realizedR", (t) => t.realizedR], ["confluences", (t) => t.confluences.map((c) => c.name)],
-    ["session", (t) => t.session], ["emotion", (t) => t.emotion], ["grade", (t) => t.grade], ["followedPlan", (t) => t.followedPlan], ["behavioralTags", (t) => t.behavioralTags], ["lesson", (t) => t.lesson], ["chartUrl", (t) => t.chartUrl],
+    ["session", (t) => t.session], ["regime", (t) => t.regime], ["volatility", (t) => t.volatility], ["emotion", (t) => t.emotion], ["grade", (t) => t.grade], ["followedPlan", (t) => t.followedPlan], ["behavioralTags", (t) => t.behavioralTags], ["lesson", (t) => t.lesson], ["chartUrl", (t) => t.chartUrl],
   ];
   const lines = [`# EDGE export · ${scope} · ${trades.length} trades · generated ${new Date().toISOString()}`, cols.map((c) => c[0]).join(","), ...trades.map((t) => cols.map(([, f]) => cell(f(t))).join(","))];
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });

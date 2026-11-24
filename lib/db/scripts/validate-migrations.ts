@@ -115,7 +115,8 @@ async function main() {
       const constraints = await client.query("SELECT count(*)::int AS n FROM pg_constraint WHERE contype='f' AND connamespace='public'::regnamespace");
       assert.equal(constraints.rows[0].n, 14);
       const journal = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
-      const expected = JSON.parse(readFileSync(new URL("../drizzle/meta/_journal.json", import.meta.url), "utf8")).entries.length;
+      const migrationEntries = JSON.parse(readFileSync(new URL("../drizzle/meta/_journal.json", import.meta.url), "utf8")).entries as { when: number }[];
+      const expected = migrationEntries.length;
       assert.equal(journal.rows[0].n, expected);
       await migrate(drizzle(client), { migrationsFolder });
       const rerun = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
@@ -124,18 +125,31 @@ async function main() {
       stage = "checking additive upgrade preserves existing journal data";
       // Simulate the already-initialized release in this disposable database.
       // Never downgrade or run this fixture setup on the real Supabase project.
-      const pendingMigration = await client.query("SELECT id FROM drizzle.__drizzle_migrations ORDER BY created_at DESC LIMIT 1");
+      // Recreate the pre-prop-manager release, not merely "latest minus one".
+      // These destructive fixture operations only run in the disposable database.
+      await client.query("ALTER TABLE public.edge_trades DROP COLUMN volatility");
       for (const table of ["edge_prop_balances", "edge_prop_challenges", "edge_prop_rules", "edge_prop_expenses", "edge_prop_payouts", "edge_prop_accounts", "edge_prop_firms"]) {
         await client.query(`DROP TABLE public.${table}`);
       }
-      await client.query("DELETE FROM drizzle.__drizzle_migrations WHERE id=$1", [pendingMigration.rows[0].id]);
+      await client.query("DELETE FROM drizzle.__drizzle_migrations WHERE created_at > $1", [migrationEntries[1]!.when]);
       const canary = await client.query(
         `INSERT INTO public.edge_accounts(owner_id,name,currency,initial_balance,type)
          VALUES ('migration-upgrade-fixture','Preserve existing account','USD','1234.56','backtesting') RETURNING *`,
       );
+      const tradeCanary = await client.query(
+        `INSERT INTO public.edge_trades(owner_id,account_id,symbol,regime,pnl_source,realized_r)
+         VALUES ('migration-upgrade-fixture',$1,'PRESERVE','News-driven','r',2) RETURNING *`,
+        [canary.rows[0].id],
+      );
+      const oldTrade = await client.query("SELECT to_jsonb(t) AS original FROM public.edge_trades t WHERE id=$1", [tradeCanary.rows[0].id]);
       await migrate(drizzle(client), { migrationsFolder });
       const preserved = await client.query("SELECT * FROM public.edge_accounts WHERE id=$1", [canary.rows[0].id]);
       assert.deepEqual(preserved.rows, canary.rows);
+      const preservedTrade = await client.query("SELECT to_jsonb(t)-'volatility' AS original, volatility FROM public.edge_trades t WHERE id=$1", [tradeCanary.rows[0].id]);
+      assert.deepEqual(preservedTrade.rows[0].original, oldTrade.rows[0].original);
+      assert.equal(preservedTrade.rows[0].volatility, null);
+      const volatilityColumn = await client.query("SELECT data_type,is_nullable,column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='edge_trades' AND column_name='volatility'");
+      assert.deepEqual(volatilityColumn.rows, [{ data_type: "text", is_nullable: "YES", column_default: null }]);
       const notesSecurity = await client.query(
         `SELECT relrowsecurity, NOT EXISTS (
           SELECT 1 FROM aclexplode(COALESCE(relacl, acldefault('r',relowner))) a WHERE a.grantee=0
@@ -157,6 +171,7 @@ async function main() {
       }
       const upgradeJournal = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
       assert.equal(upgradeJournal.rows[0].n, expected);
+      await client.query("DELETE FROM public.edge_trades WHERE id=$1", [tradeCanary.rows[0].id]);
       await client.query("DELETE FROM public.edge_accounts WHERE id=$1", [canary.rows[0].id]);
     } finally { client.release(); }
     // Run the actual financial/ownership suite against this separate DB.

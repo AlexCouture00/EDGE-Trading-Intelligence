@@ -41,6 +41,10 @@ export async function saveTrade(ownerId: string, input: TradeInput, id?: string)
       accountId = account!.id;
     }
     const data = { ...input, accountId };
+    const regimes = ["", "Trend Following", "Counter Trend", "Ranging"];
+    if (data.regime !== undefined && !regimes.includes(data.regime) && data.regime !== existing?.regime) {
+      throw new HttpError(400, "Choose Trend Following, Counter Trend or Ranging. Historical regimes can only be preserved on their original trade.");
+    }
     const directR = data.pnlSource === "r";
     if (existing?.pnlSource === "r" && !directR) throw new HttpError(400, "An R-only trade cannot be converted into a monetary trade.");
     // Editing R is independent of the original monetary evidence. Preserve that

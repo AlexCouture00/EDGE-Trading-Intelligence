@@ -204,6 +204,41 @@ application publishing are separate operations; use the current workflow in sect
 on a disposable local database, including preservation of an existing account.
 No Supabase migration has been authorized merely by adding these files.
 
+## Market regime and volatility: approved additive migration applied
+
+The journal offers **Trend Following**, **Counter Trend** and **Ranging** for new
+market-regime selections, plus a separate optional **High**, **Medium** or **Low**
+volatility selection. Existing regime values are preserved on their original
+trades and remain visible in historical reports; they are not offered as choices
+for new trades. Performance groups closed trades by each field using R metrics
+and the current filters. Unassigned values appear as **Not recorded**.
+
+The owner approved `0003_trade_volatility.sql`, containing only:
+
+```sql
+ALTER TABLE "edge_trades" ADD COLUMN "volatility" text;
+```
+
+The approved Supabase migration was applied using the certificate-verified
+Session pooler. Verification confirmed the intended project, all four local
+migration hashes/timestamps, the nullable text column with no default, unchanged
+trade-row contents excluding the new field, and unchanged RLS and access
+restrictions on all 16 EDGE tables. No trade was assigned a volatility value,
+and no synthetic data was created. Prop Firm Manager was not changed.
+
+The maintenance-only command is `pnpm --filter @workspace/db run migrate:volatility`.
+It requires `EDGE_CONFIRM_VOLATILITY_MIGRATION=add-volatility-column` and
+`EXPECTED_SUPABASE_PROJECT_REF` matching the intended project, and uses only
+`MIGRATION_DATABASE_URL`, never `DATABASE_URL`. It refuses unexpected history,
+unverified TLS, a non-Session target or any migration other than the reviewed
+one-column addition. When the exact migration is already recorded, it verifies
+the schema without applying it again. Never run it from a build or startup.
+
+The owner separately approved adding the same optional column to Replit's
+development database. Only that field was added there; no missing Prop Firm
+Manager migrations were applied or falsely recorded as complete. Development
+and Supabase remain separate. App publishing requires separate approval.
+
 ## Prop Firm Manager: approved additive migration applied
 
 The local application now includes `/prop-manager` under Record. Its storage is
