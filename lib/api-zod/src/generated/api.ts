@@ -1762,6 +1762,8 @@ export const DeleteTradeResponse = zod.void()
 export const getAnalyticsQueryCurrencyRegExp = new RegExp('^[A-Z]{3}$');
 export const getAnalyticsQueryMinSampleMax = 1000;
 
+export const getAnalyticsQueryRegimeMax = 100;
+
 
 
 export const GetAnalyticsQueryParams = zod.object({
@@ -1775,7 +1777,8 @@ export const GetAnalyticsQueryParams = zod.object({
   "direction": zod.enum(['long', 'short']).optional(),
   "confluenceIds": zod.coerce.string().optional().describe('Comma-separated UUIDs'),
   "matchMode": zod.enum(['exact', 'containsAll']).optional(),
-  "minSample": zod.coerce.number().int().min(1).max(getAnalyticsQueryMinSampleMax).optional()
+  "minSample": zod.coerce.number().int().min(1).max(getAnalyticsQueryMinSampleMax).optional(),
+  "regime": zod.coerce.string().max(getAnalyticsQueryRegimeMax).optional().describe('Exact market regime label; use Not recorded for missing labels.')
 })
 
 export const getAnalyticsResponseRecentTradesItemOneCurrencyRegExp = new RegExp('^[A-Z]{3}$');
@@ -2141,6 +2144,7 @@ export const GetAnalyticsResponse = zod.object({
   "confluenceIds": zod.array(zod.string()).optional(),
   "sampleWarning": zod.boolean().optional()
 }))),
+  "availableRegimes": zod.array(zod.string()).describe('Regimes in closed trades matching other filters, before the regime filter is applied.'),
   "mfe": zod.object({
   "overall": zod.object({
   "totalTrades": zod.number().int(),

@@ -771,6 +771,8 @@ export interface Analytics {
   byRegime: GroupMetrics[];
   byVolatility: GroupMetrics[];
   byRegimeVolatility: GroupMetrics[];
+  /** Regimes in closed trades matching other filters, before the regime filter is applied. */
+  availableRegimes: string[];
   mfe: MfeAnalytics;
   byEmotion: GroupMetrics[];
   byGrade: GroupMetrics[];
@@ -915,6 +917,11 @@ matchMode?: GetAnalyticsMatchMode;
  * @maximum 1000
  */
 minSample?: number;
+/**
+ * Exact market regime label; use Not recorded for missing labels.
+ * @maxLength 100
+ */
+regime?: string;
 };
 
 export type GetAnalyticsMatchMode = typeof GetAnalyticsMatchMode[keyof typeof GetAnalyticsMatchMode];

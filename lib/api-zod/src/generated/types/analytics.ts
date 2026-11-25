@@ -26,6 +26,8 @@ export interface Analytics {
   byRegime: GroupMetrics[];
   byVolatility: GroupMetrics[];
   byRegimeVolatility: GroupMetrics[];
+  /** Regimes in closed trades matching other filters, before the regime filter is applied. */
+  availableRegimes: string[];
   mfe: MfeAnalytics;
   byEmotion: GroupMetrics[];
   byGrade: GroupMetrics[];

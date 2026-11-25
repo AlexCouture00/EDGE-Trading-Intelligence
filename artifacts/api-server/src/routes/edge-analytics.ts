@@ -7,6 +7,7 @@ import { summarizeJournal as summarize, journalEquity } from "../lib/journal-r";
 import { mfeAnalytics } from "../lib/mfe";
 import { temporalAnalytics } from "../lib/temporal-analytics";
 import { regimeVolatilityAnalytics } from "../lib/regime-volatility";
+import { regimeScope } from "../lib/regime-scope";
 import { loadTrades, filterTrades, parseId, HttpError, type LoadedTrade } from "../lib/edge-data";
 
 const router: IRouter = Router();
@@ -26,7 +27,8 @@ router.get("/analytics", async (req, res): Promise<void> => {
   if (currencies.size > 1) throw new HttpError(400, "Select one trade currency; currency conversion is not enabled.");
   const currency = query.currency ?? selectedAccounts[0]?.currency ?? "USD";
   const selectedIds = query.confluenceIds ? query.confluenceIds.split(",").filter(Boolean).map(parseId) : [];
-  const rows = filterTrades(allTrades, query).filter((t) => query.confluenceIds === undefined || matchesConfluences(t.confluenceIds, selectedIds, query.matchMode ?? "containsAll"));
+  const scoped = filterTrades(allTrades, query).filter((t) => query.confluenceIds === undefined || matchesConfluences(t.confluenceIds, selectedIds, query.matchMode ?? "containsAll"));
+  const { rows, availableRegimes } = regimeScope(scoped, query.regime);
   const closed = rows.filter((t) => t.status === "closed");
   // Journal performance is trade-only and starts at zero for the selected scope.
   // Preserve legacy balances/cash flows in storage, but never treat them as trading P&L.
@@ -69,7 +71,7 @@ router.get("/analytics", async (req, res): Promise<void> => {
     "Confluence association does not prove causation. Combination rankings prioritize sample size; no statistical superiority is implied.",
   ];
   res.json(GetAnalyticsResponse.parse({
-    isDemo: res.locals.isDemo, currency, metrics, equity,
+    isDemo: res.locals.isDemo, currency, metrics, equity, availableRegimes,
     mfe: mfeAnalytics(closed),
     temporal: temporalAnalytics(closed, timezone),
     byRegimeVolatility: regimeVolatilityAnalytics(closed),

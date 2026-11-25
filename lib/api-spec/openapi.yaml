@@ -356,6 +356,7 @@ paths:
         - { name: confluenceIds, in: query, description: Comma-separated UUIDs, schema: { type: string } }
         - { name: matchMode, in: query, schema: { type: string, enum: [exact, containsAll] } }
         - { name: minSample, in: query, schema: { type: integer, minimum: 1, maximum: 1000 } }
+        - { name: regime, in: query, description: Exact market regime label; use Not recorded for missing labels., schema: { type: string, maxLength: 100 } }
       responses:
         "200":
           description: Analytics computed only from persisted closed trades
@@ -835,7 +836,7 @@ components:
         byDaySession: { type: array, items: { $ref: "#/components/schemas/DaySessionMetrics" } }
     Analytics:
       type: object
-      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, bySession, temporal, byRegime, byVolatility, byRegimeVolatility, mfe, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
+      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, bySession, temporal, byRegime, byVolatility, byRegimeVolatility, availableRegimes, mfe, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
       properties:
         isDemo: { type: boolean }
         currency: { type: string }
@@ -850,6 +851,10 @@ components:
         byRegime: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byVolatility: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byRegimeVolatility: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        availableRegimes:
+          type: array
+          description: Regimes in closed trades matching other filters, before the regime filter is applied.
+          items: { type: string }
         mfe: { $ref: "#/components/schemas/MfeAnalytics" }
         byEmotion: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byGrade: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }

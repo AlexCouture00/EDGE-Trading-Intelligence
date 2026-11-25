@@ -5,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RANGE_LABEL, useFilters, type Range } from "@/lib/filters";
 
-export function FilterBar({ hideRange }: { hideRange?: boolean }) {
+export function FilterBar({ hideRange, marketRegime }: {
+  hideRange?: boolean;
+  marketRegime?: { value: string; onChange: (value: string) => void; options: string[] };
+}) {
   const { filters, set, reset, currencies, currency, strategies, mixedCurrency } = useFilters();
   const [sym, setSym] = useState(filters.symbol);
   useEffect(() => setSym(filters.symbol), [filters.symbol]);
@@ -14,7 +17,7 @@ export function FilterBar({ hideRange }: { hideRange?: boolean }) {
     return () => clearTimeout(t);
   }, [sym, filters.symbol, set]);
 
-  const dirty = filters.range !== "all" || filters.symbol || filters.strategyId || filters.direction || filters.currency;
+  const dirty = filters.range !== "all" || filters.symbol || filters.strategyId || filters.direction || filters.currency || marketRegime?.value;
 
   return (
     <div className="flex flex-wrap items-center gap-2 pb-5 rise" data-testid="filter-bar">
@@ -29,9 +32,12 @@ export function FilterBar({ hideRange }: { hideRange?: boolean }) {
         options={strategies.filter((s) => !s.archived).map((s) => ({ value: s.id, label: s.name }))} />
       <NSelect value={filters.direction} onChange={(v) => set({ direction: v as "" | "long" | "short" })} allowNone noneLabel="Both sides" className="w-[118px]" testId="select-direction"
         options={[{ value: "long", label: "Long" }, { value: "short", label: "Short" }]} />
+      {marketRegime && <NSelect value={marketRegime.value} onChange={marketRegime.onChange}
+        allowNone noneLabel="All market regimes" placeholder="Market regime" className="w-[180px]" testId="select-market-regime-filter"
+        options={marketRegime.options.map(value => ({ value, label: value }))} />}
       <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder="Symbol" className="h-8 w-[110px] text-[12.5px] bg-card uppercase placeholder:normal-case" data-testid="input-symbol-filter" />
       {dirty && (
-        <Button size="sm" variant="ghost" onClick={reset} className="text-muted-foreground" data-testid="button-reset-filters">
+        <Button size="sm" variant="ghost" onClick={() => { reset(); marketRegime?.onChange(""); }} className="text-muted-foreground" data-testid="button-reset-filters">
           <X className="h-3.5 w-3.5 mr-1" /> Reset
         </Button>
       )}

@@ -41,4 +41,9 @@ matchMode?: GetAnalyticsMatchMode;
  * @maximum 1000
  */
 minSample?: number;
+/**
+ * Exact market regime label; use Not recorded for missing labels.
+ * @maxLength 100
+ */
+regime?: string;
 };

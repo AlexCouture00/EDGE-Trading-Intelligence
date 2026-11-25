@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useGetAnalytics } from "@workspace/api-client-react";
 import { FilterBar } from "@/components/filter-bar";
 import { TemporalPerformance } from "@/components/temporal-performance";
@@ -12,15 +13,18 @@ import { monthLabel } from "@/lib/month-label";
 export default function Performance() {
   const { demo } = useMode();
   const { analyticsParams, scopeLabel } = useFilters();
-  const q = useGetAnalytics(analyticsParams);
+  const [regime, setRegime] = useState("");
+  useEffect(() => { setRegime(""); }, [demo]);
+  const q = useGetAnalytics({ ...analyticsParams, ...(regime ? { regime } : {}) });
   const a = q.data;
   const cur = a?.currency ?? "USD";
   const monthly = a?.monthly.map(row => ({ ...row, name: monthLabel(row.id) })) ?? [];
+  const regimeOptions = [...new Set(["Trend Following", "Counter Trend", "Ranging", ...(a?.availableRegimes ?? []), ...(regime ? [regime] : [])])];
 
   return (
     <div>
       <PageHeader eyebrow={demo ? "Demo workspace · Performance" : "Performance"} title="Realized performance" sub={<>R curve and breakdowns for {scopeLabel}. Closed trade results only, measured in units of planned risk.</>} />
-      <FilterBar />
+      <FilterBar marketRegime={{ value: regime, onChange: setRegime, options: regimeOptions }} />
       {q.isLoading ? <LoadingBlock rows={10} /> : q.error ? <ErrorBlock error={q.error} retry={() => q.refetch()} /> : !a || a.metrics.totalTrades === 0 ? (
         <Panel><Empty title="No closed trades in scope" body="Performance breakdowns appear once trades are closed within the current filters." /></Panel>
       ) : (
@@ -34,7 +38,6 @@ export default function Performance() {
             <Stat label="Total R" value={rFmt(a.metrics.rSample ? a.metrics.totalR : null)} valueClass={tone(a.metrics.totalR)} />
             <Stat label="Avg hold" value={hours(a.metrics.averageHoldHours)} />
           </StatStrip>
-          <MfePerformance data={a.mfe} />
           {a.warnings.map((w, i) => <Caution key={i}>{w}</Caution>)}
           <div className="grid gap-4 xl:grid-cols-2">
             <Panel title="Cumulative R" meta={`${a.metrics.rSample} of ${a.metrics.totalTrades} trades have recorded R`}><RChart data={a.equity} height={240} /></Panel>
@@ -59,6 +62,7 @@ export default function Performance() {
           <Panel title="By Market regime + volatility" meta="Combined conditions · closed trades · current filters · results in R">
             <GroupTable rows={a.byRegimeVolatility ?? []} currency={cur} label="Market regime · Volatility" />
           </Panel>
+          <MfePerformance data={a.mfe} />
         </div>
       )}
     </div>
