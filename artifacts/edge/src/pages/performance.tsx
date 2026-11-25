@@ -7,6 +7,7 @@ import { Caution, Empty, ErrorBlock, GroupTable, LoadingBlock, PageHeader, Panel
 import { useFilters } from "@/lib/filters";
 import { useMode } from "@/lib/mode";
 import { hours, pf, ratio, rFmt, tone } from "@/lib/format";
+import { monthLabel } from "@/lib/month-label";
 
 export default function Performance() {
   const { demo } = useMode();
@@ -14,6 +15,7 @@ export default function Performance() {
   const q = useGetAnalytics(analyticsParams);
   const a = q.data;
   const cur = a?.currency ?? "USD";
+  const monthly = a?.monthly.map(row => ({ ...row, name: monthLabel(row.id) })) ?? [];
 
   return (
     <div>
@@ -38,8 +40,8 @@ export default function Performance() {
             <Panel title="Cumulative R" meta={`${a.metrics.rSample} of ${a.metrics.totalTrades} trades have recorded R`}><RChart data={a.equity} height={240} /></Panel>
           </div>
           <Panel title="Monthly" meta="By exit month">
-            <GroupBars rows={a.monthly} metric="totalR" currency={cur} height={200} />
-            <div className="mt-3"><GroupTable rows={a.monthly} currency={cur} label="Month" /></div>
+            <GroupBars rows={monthly} metric="totalR" currency={cur} height={200} />
+            <div className="mt-3"><GroupTable rows={monthly} currency={cur} label="Month" /></div>
           </Panel>
           <div className="grid gap-4 xl:grid-cols-[1fr_420px]">
             <Panel title="By instrument"><GroupTable rows={a.byInstrument} currency={cur} label="Symbol" /></Panel>
@@ -54,6 +56,9 @@ export default function Performance() {
               <GroupTable rows={a.byVolatility ?? []} currency={cur} label="Volatility" />
             </Panel>
           </div>
+          <Panel title="By Market regime + volatility" meta="Combined conditions · closed trades · current filters · results in R">
+            <GroupTable rows={a.byRegimeVolatility ?? []} currency={cur} label="Market regime · Volatility" />
+          </Panel>
         </div>
       )}
     </div>

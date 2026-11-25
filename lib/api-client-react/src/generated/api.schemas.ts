@@ -770,6 +770,7 @@ export interface Analytics {
   temporal: TemporalAnalytics;
   byRegime: GroupMetrics[];
   byVolatility: GroupMetrics[];
+  byRegimeVolatility: GroupMetrics[];
   mfe: MfeAnalytics;
   byEmotion: GroupMetrics[];
   byGrade: GroupMetrics[];
