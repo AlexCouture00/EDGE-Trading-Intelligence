@@ -1,5 +1,6 @@
 import { useGetAnalytics } from "@workspace/api-client-react";
 import { FilterBar } from "@/components/filter-bar";
+import { TemporalPerformance } from "@/components/temporal-performance";
 import { MfePerformance } from "@/components/mfe-performance";
 import { GroupBars, RChart } from "@/components/charts";
 import { Caution, Empty, ErrorBlock, GroupTable, LoadingBlock, PageHeader, Panel, Stat, StatStrip } from "@/components/kit";
@@ -44,10 +45,7 @@ export default function Performance() {
             <Panel title="By instrument"><GroupTable rows={a.byInstrument} currency={cur} label="Symbol" /></Panel>
             <Panel title="By direction"><GroupTable rows={a.byDirection} currency={cur} label="Side" /></Panel>
           </div>
-          <Panel title="By session" meta="Recorded trade session · closed trades · current filters">
-            <GroupTable rows={a.bySession} currency={cur} label="Session" />
-            <p className="mt-3 text-xs text-muted-foreground">Compare trade count, win rate and R by session. Small samples are flagged; results become more meaningful as you log more trades.</p>
-          </Panel>
+          <TemporalPerformance temporal={a.temporal} bySession={a.bySession} currency={cur} />
           <div className="grid gap-4 xl:grid-cols-2">
             <Panel title="By market regime" meta="Closed trades · current filters · results in R">
               <GroupTable rows={a.byRegime ?? []} currency={cur} label="Market regime" />

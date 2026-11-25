@@ -816,9 +816,26 @@ components:
         byRegime: { type: array, items: { $ref: "#/components/schemas/MfeGroup" } }
         byVolatility: { type: array, items: { $ref: "#/components/schemas/MfeGroup" } }
         byContext: { type: array, items: { $ref: "#/components/schemas/MfeGroup" } }
+    DaySessionMetrics:
+      allOf:
+        - $ref: "#/components/schemas/GroupMetrics"
+        - type: object
+          required: [dayId, session]
+          properties:
+            dayId: { type: string }
+            session: { type: string }
+    TemporalAnalytics:
+      type: object
+      required: [timezone, excludedMissingEntry, byDayOfWeek, byHourOfDay, byDaySession]
+      properties:
+        timezone: { type: string }
+        excludedMissingEntry: { type: integer, description: Closed trades without a valid entry timestamp; excluded from day/hour analyses only. }
+        byDayOfWeek: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byHourOfDay: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        byDaySession: { type: array, items: { $ref: "#/components/schemas/DaySessionMetrics" } }
     Analytics:
       type: object
-      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, bySession, byRegime, byVolatility, mfe, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
+      required: [isDemo, currency, metrics, equity, monthly, byInstrument, byStrategy, byDirection, bySession, temporal, byRegime, byVolatility, mfe, byEmotion, byGrade, confluences, combinations, byConfluenceCount, recentTrades, openTrades, warnings]
       properties:
         isDemo: { type: boolean }
         currency: { type: string }
@@ -829,6 +846,7 @@ components:
         byStrategy: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byDirection: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         bySession: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
+        temporal: { $ref: "#/components/schemas/TemporalAnalytics" }
         byRegime: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         byVolatility: { type: array, items: { $ref: "#/components/schemas/GroupMetrics" } }
         mfe: { $ref: "#/components/schemas/MfeAnalytics" }

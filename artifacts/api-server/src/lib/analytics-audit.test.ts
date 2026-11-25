@@ -109,12 +109,23 @@ test("PostgreSQL analytics audit: confluences, currencies, cash flows, edit/dele
         assert.equal(all.bySession.find((g) => g.id === "London/NY overlap")!.totalR, -1);
         assert.equal(all.bySession.find((g) => g.id === "Not recorded")!.totalTrades, 1);
         assert.equal(all.bySession.find((g) => g.id === "Sydney")!.totalR, 3);
+        assert.equal(all.temporal.excludedMissingEntry, 0);
+        assert.equal(all.temporal.byDayOfWeek.reduce((n, g) => n + g.totalTrades, 0), 7);
+        assert.equal(all.temporal.byHourOfDay.reduce((n, g) => n + g.totalTrades, 0), 7);
+        assert.equal(all.temporal.byDaySession.reduce((n, g) => n + g.totalTrades, 0), 7);
+        assert.equal(all.temporal.byDaySession.find(g => g.session === "London" && g.totalTrades > 0)!.totalR, 0.5);
+        assert.equal(all.temporal.byDaySession.find(g => g.session === "Asia" && g.totalTrades > 0)!.averageR, null);
+        assert.equal(all.temporal.byDaySession.some(g => g.session === "Open only"), false);
         const filtered = await get({ accountId: sessionAccount!.id, to: "2026-01-01T23:59:59.999Z" });
         assert.equal(filtered.bySession.length, 1);
         assert.equal(filtered.bySession[0]!.name, "London");
         assert.equal(filtered.bySession[0]!.totalR, 1);
+        assert.equal(filtered.temporal.byDayOfWeek.reduce((n, g) => n + g.totalTrades, 0), 1);
+        assert.equal(filtered.temporal.byDaySession.find(g => g.totalTrades > 0)!.totalR, 1);
         const empty = await get({ accountId: sessionAccount!.id, from: "2027-01-01T00:00:00Z" });
         assert.deepEqual(empty.bySession, []);
+        assert.deepEqual(empty.temporal.byDaySession, []);
+        assert.ok(empty.temporal.byDayOfWeek.every(g => g.totalTrades === 0 && g.averageR === null));
       } finally {
         for (const id of saved) await db.delete(trades).where(eq(trades.id, id));
         await db.delete(accounts).where(eq(accounts.id, sessionAccount!.id));

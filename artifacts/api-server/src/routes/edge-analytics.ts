@@ -5,6 +5,7 @@ import { GetAnalyticsQueryParams, GetAnalyticsResponse } from "@workspace/api-zo
 import { matchesConfluences } from "../lib/calculations";
 import { summarizeJournal as summarize, journalEquity } from "../lib/journal-r";
 import { mfeAnalytics } from "../lib/mfe";
+import { temporalAnalytics } from "../lib/temporal-analytics";
 import { loadTrades, filterTrades, parseId, HttpError, type LoadedTrade } from "../lib/edge-data";
 
 const router: IRouter = Router();
@@ -69,6 +70,7 @@ router.get("/analytics", async (req, res): Promise<void> => {
   res.json(GetAnalyticsResponse.parse({
     isDemo: res.locals.isDemo, currency, metrics, equity,
     mfe: mfeAnalytics(closed),
+    temporal: temporalAnalytics(closed, timezone),
     monthly: groups(month).sort((a, b) => a.id.localeCompare(b.id)),
     byInstrument: groups((t) => t.symbol),
     byStrategy: groups((t) => t.strategyId ?? "Unassigned", (t) => t.strategyName ?? "Unassigned"),

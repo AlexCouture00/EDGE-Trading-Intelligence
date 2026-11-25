@@ -743,6 +743,20 @@ export interface MfeAnalytics {
   byContext: MfeGroup[];
 }
 
+export type DaySessionMetrics = GroupMetrics & {
+  dayId: string;
+  session: string;
+};
+
+export interface TemporalAnalytics {
+  timezone: string;
+  /** Closed trades without a valid entry timestamp; excluded from day/hour analyses only. */
+  excludedMissingEntry: number;
+  byDayOfWeek: GroupMetrics[];
+  byHourOfDay: GroupMetrics[];
+  byDaySession: DaySessionMetrics[];
+}
+
 export interface Analytics {
   isDemo: boolean;
   currency: string;
@@ -753,6 +767,7 @@ export interface Analytics {
   byStrategy: GroupMetrics[];
   byDirection: GroupMetrics[];
   bySession: GroupMetrics[];
+  temporal: TemporalAnalytics;
   byRegime: GroupMetrics[];
   byVolatility: GroupMetrics[];
   mfe: MfeAnalytics;

@@ -1984,6 +1984,88 @@ export const GetAnalyticsResponse = zod.object({
   "confluenceIds": zod.array(zod.string()).optional(),
   "sampleWarning": zod.boolean().optional()
 }))),
+  "temporal": zod.object({
+  "timezone": zod.string(),
+  "excludedMissingEntry": zod.number().int().describe('Closed trades without a valid entry timestamp; excluded from day/hour analyses only.'),
+  "byDayOfWeek": zod.array(zod.object({
+  "totalTrades": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "breakeven": zod.number().int(),
+  "winRate": zod.number().nullable(),
+  "netPnl": zod.string(),
+  "averageR": zod.number().nullable(),
+  "medianR": zod.number().nullable(),
+  "totalR": zod.number(),
+  "profitFactor": zod.number().nullable().describe('Null when no losses; see profitFactorInfinite'),
+  "profitFactorInfinite": zod.boolean().optional(),
+  "maxDrawdown": zod.string(),
+  "maxDrawdownPercent": zod.number().nullish(),
+  "ruleAdherence": zod.number().nullable(),
+  "rSample": zod.number().int(),
+  "averageHoldHours": zod.number().nullable(),
+  "streak": zod.number().int()
+}).and(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "color": zod.string().optional(),
+  "confluenceIds": zod.array(zod.string()).optional(),
+  "sampleWarning": zod.boolean().optional()
+}))),
+  "byHourOfDay": zod.array(zod.object({
+  "totalTrades": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "breakeven": zod.number().int(),
+  "winRate": zod.number().nullable(),
+  "netPnl": zod.string(),
+  "averageR": zod.number().nullable(),
+  "medianR": zod.number().nullable(),
+  "totalR": zod.number(),
+  "profitFactor": zod.number().nullable().describe('Null when no losses; see profitFactorInfinite'),
+  "profitFactorInfinite": zod.boolean().optional(),
+  "maxDrawdown": zod.string(),
+  "maxDrawdownPercent": zod.number().nullish(),
+  "ruleAdherence": zod.number().nullable(),
+  "rSample": zod.number().int(),
+  "averageHoldHours": zod.number().nullable(),
+  "streak": zod.number().int()
+}).and(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "color": zod.string().optional(),
+  "confluenceIds": zod.array(zod.string()).optional(),
+  "sampleWarning": zod.boolean().optional()
+}))),
+  "byDaySession": zod.array(zod.object({
+  "totalTrades": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "breakeven": zod.number().int(),
+  "winRate": zod.number().nullable(),
+  "netPnl": zod.string(),
+  "averageR": zod.number().nullable(),
+  "medianR": zod.number().nullable(),
+  "totalR": zod.number(),
+  "profitFactor": zod.number().nullable().describe('Null when no losses; see profitFactorInfinite'),
+  "profitFactorInfinite": zod.boolean().optional(),
+  "maxDrawdown": zod.string(),
+  "maxDrawdownPercent": zod.number().nullish(),
+  "ruleAdherence": zod.number().nullable(),
+  "rSample": zod.number().int(),
+  "averageHoldHours": zod.number().nullable(),
+  "streak": zod.number().int()
+}).and(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "color": zod.string().optional(),
+  "confluenceIds": zod.array(zod.string()).optional(),
+  "sampleWarning": zod.boolean().optional()
+})).and(zod.object({
+  "dayId": zod.string(),
+  "session": zod.string()
+})))
+}),
   "byRegime": zod.array(zod.object({
   "totalTrades": zod.number().int(),
   "wins": zod.number().int(),

@@ -4,3 +4,4 @@
 - [Certificate diagnostics](certificate-diagnostics.md) — Flattened PEM can contain a valid CA; diagnose formatting and DER separately without exposing input.
 - [Protected Preview testing](protected-preview-testing.md) — Keep bypass credentials origin-scoped; hosted auth checks require real external sessions.
 - [Prop firm accounting](prop-firm-accounting.md) — Allocations are not personal assets; cash, snapshots and confirmed rule compliance stay distinct.
+- [Temporal performance](temporal-performance.md) — Entry-time cohorts evaluate trade initiation; keep global exit-date filters consistent and disclose the distinction.
