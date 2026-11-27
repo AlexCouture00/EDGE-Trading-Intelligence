@@ -13,6 +13,7 @@ export function summarizeMfe(input: MfeTrade[]) {
   const closed = input.filter(t => t.status === "closed");
   const recorded = closed.filter(t => t.mfeR != null);
   const paired = recorded.filter(t => t.realizedR != null);
+  const winners = paired.filter(t => D(t.realizedR!).gt(0));
   const mean = (pick: (t: MfeTrade) => string) => paired.length
     ? paired.reduce((sum, t) => sum.plus(pick(t)), D()).div(paired.length).toNumber()
     : null;
@@ -22,6 +23,7 @@ export function summarizeMfe(input: MfeTrade[]) {
     pairedCount: paired.length,
     averageMfeR: mean(t => t.mfeR!),
     averageRealizedR: mean(t => t.realizedR!),
+    averageWinningR: winners.length ? winners.reduce((sum, t) => sum.plus(t.realizedR!), D()).div(winners.length).toNumber() : null,
     averageGivebackR: mean(t => D(t.mfeR!).minus(t.realizedR!).toString()),
   };
 }

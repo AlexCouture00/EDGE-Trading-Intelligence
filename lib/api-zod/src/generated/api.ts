@@ -2164,6 +2164,7 @@ export const GetAnalyticsResponse = zod.object({
   "pairedCount": zod.number().int(),
   "averageMfeR": zod.number().nullable(),
   "averageRealizedR": zod.number().nullable(),
+  "averageWinningR": zod.number().nullable().describe('Average positive realized R among the paired closed trades with both MFE and realized R recorded; null without winners.'),
   "averageGivebackR": zod.number().nullable().describe('Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.')
 }),
   "byRegime": zod.array(zod.object({
@@ -2172,6 +2173,7 @@ export const GetAnalyticsResponse = zod.object({
   "pairedCount": zod.number().int(),
   "averageMfeR": zod.number().nullable(),
   "averageRealizedR": zod.number().nullable(),
+  "averageWinningR": zod.number().nullable().describe('Average positive realized R among the paired closed trades with both MFE and realized R recorded; null without winners.'),
   "averageGivebackR": zod.number().nullable().describe('Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.')
 }).and(zod.object({
   "id": zod.string(),
@@ -2183,6 +2185,7 @@ export const GetAnalyticsResponse = zod.object({
   "pairedCount": zod.number().int(),
   "averageMfeR": zod.number().nullable(),
   "averageRealizedR": zod.number().nullable(),
+  "averageWinningR": zod.number().nullable().describe('Average positive realized R among the paired closed trades with both MFE and realized R recorded; null without winners.'),
   "averageGivebackR": zod.number().nullable().describe('Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.')
 }).and(zod.object({
   "id": zod.string(),
@@ -2194,6 +2197,7 @@ export const GetAnalyticsResponse = zod.object({
   "pairedCount": zod.number().int(),
   "averageMfeR": zod.number().nullable(),
   "averageRealizedR": zod.number().nullable(),
+  "averageWinningR": zod.number().nullable().describe('Average positive realized R among the paired closed trades with both MFE and realized R recorded; null without winners.'),
   "averageGivebackR": zod.number().nullable().describe('Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.')
 }).and(zod.object({
   "id": zod.string(),

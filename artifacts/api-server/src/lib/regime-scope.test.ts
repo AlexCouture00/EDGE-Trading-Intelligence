@@ -23,10 +23,16 @@ test("regime selection applies consistently to metrics, curves, MFE and all brea
   assert.deepEqual(availableRegimes, ["Counter Trend", "Ranging", "Trend Following"]);
   assert.equal(summarizeJournal(rows).totalR, 1);
   assert.equal(summarizeJournal(rows).averageR, 0.5);
+  assert.equal(summarizeJournal(rows).averageWinningR, 2);
   assert.equal(journalEquity(rows).at(-1)!.cumulativeR, 1);
   assert.equal(mfeAnalytics(rows).overall.averageRealizedR, 0.5);
   assert.equal(temporalAnalytics(rows, "UTC").byDayOfWeek[0]!.totalTrades, 2);
+  const temporal = temporalAnalytics(rows, "UTC");
+  for (const group of [...temporal.byDayOfWeek, ...temporal.byHourOfDay, ...temporal.byDaySession]) {
+    assert.equal(group.averageWinningR, group.totalTrades ? 2 : null);
+  }
   assert.equal(regimeVolatilityAnalytics(rows)[0]!.totalR, 1);
+  assert.equal(regimeVolatilityAnalytics(rows)[0]!.averageWinningR, 2);
   assert.deepEqual(GetAnalyticsResponse.shape.availableRegimes.parse(availableRegimes), availableRegimes);
   assert.deepEqual(input, before);
 });

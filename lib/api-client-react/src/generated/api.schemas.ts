@@ -730,6 +730,11 @@ export interface MfeMetrics {
   /** @nullable */
   averageRealizedR: number | null;
   /**
+     * Average positive realized R among the paired closed trades with both MFE and realized R recorded; null without winners.
+     * @nullable
+     */
+  averageWinningR: number | null;
+  /**
      * Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit.
      * @nullable
      */

@@ -5,3 +5,4 @@
 - [Protected Preview testing](protected-preview-testing.md) — Keep bypass credentials origin-scoped; hosted auth checks require real external sessions.
 - [Prop firm accounting](prop-firm-accounting.md) — Allocations are not personal assets; cash, snapshots and confirmed rule compliance stay distinct.
 - [Temporal performance](temporal-performance.md) — Entry-time cohorts evaluate trade initiation; keep global exit-date filters consistent and disclose the distinction.
+- [Performance averages](performance-averages.md) — The owner wants winning-trade R averages throughout Performance, not just its headline statistic.

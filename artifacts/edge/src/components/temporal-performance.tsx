@@ -9,7 +9,7 @@ const DAY_FALLBACK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "S
 
 function cellValue(c: GroupMetrics, m: Metric): number | null {
   if (!c.rSample) return null;
-  return m === "avg" ? c.averageR ?? null : c.totalR;
+  return m === "avg" ? c.averageWinningR ?? null : c.totalR;
 }
 
 function cellBg(v: number | null, max: number): string | undefined {
@@ -23,7 +23,7 @@ function cellBg(v: number | null, max: number): string | undefined {
 
 function describe(c: DaySessionMetrics, day: string): string {
   if (!c.totalTrades) return `${day}, ${c.session}: no closed trades`;
-  return `${day}, ${c.session}: ${c.totalTrades} trade${c.totalTrades === 1 ? "" : "s"}, ${c.rSample} with R, win rate ${ratio(c.winRate)}, average ${rFmt(c.averageR)}, total ${rFmt(c.rSample ? c.totalR : null)}, profit factor ${pf(c)}${c.rSample < MIN_SAMPLE ? ", small R sample" : ""}`;
+  return `${day}, ${c.session}: ${c.totalTrades} trade${c.totalTrades === 1 ? "" : "s"}, ${c.rSample} with R, win rate ${ratio(c.winRate)}, average winning R ${rFmt(c.averageWinningR ?? null)}, total ${rFmt(c.rSample ? c.totalR : null)}, profit factor ${pf(c)}${c.rSample < MIN_SAMPLE ? ", small R sample" : ""}`;
 }
 
 function Heatmap({ cells, days }: { cells: DaySessionMetrics[]; days: Map<string, string> }) {
@@ -48,20 +48,20 @@ function Heatmap({ cells, days }: { cells: DaySessionMetrics[]; days: Map<string
           {(["avg", "total"] as Metric[]).map((m) => (
             <button key={m} role="radio" aria-checked={metric === m} onClick={() => setMetric(m)} data-testid={`button-heatmap-${m}`}
               className={cn("px-2.5 py-1 text-[11.5px] rounded-sm transition-colors", metric === m ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground")}>
-              {m === "avg" ? "Avg R" : "Total R"}
+              {m === "avg" ? "Avg winning R" : "Total R"}
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2 text-[10.5px] num text-muted-foreground" aria-label={`Color scale from ${rFmt(-max)} to ${rFmt(max)}, centered on 0R`}>
-          <span>{rFmt(-max)}</span>
-          <span className="h-2 w-32 rounded-sm" style={{ background: "linear-gradient(90deg, hsl(var(--neg) / .72), hsl(var(--neg) / .1), hsl(var(--muted-foreground) / .12), hsl(var(--pos) / .1), hsl(var(--pos) / .72))" }} />
+        <div className="flex items-center gap-2 text-[10.5px] num text-muted-foreground" aria-label={`Color scale from ${rFmt(metric === "avg" ? 0 : -max)} to ${rFmt(max)}`}>
+          <span>{rFmt(metric === "avg" ? 0 : -max)}</span>
+          <span className="h-2 w-32 rounded-sm" style={{ background: metric === "avg" ? "linear-gradient(90deg, hsl(var(--muted-foreground) / .12), hsl(var(--pos) / .72))" : "linear-gradient(90deg, hsl(var(--neg) / .72), hsl(var(--neg) / .1), hsl(var(--muted-foreground) / .12), hsl(var(--pos) / .1), hsl(var(--pos) / .72))" }} />
           <span>{rFmt(max)}</span>
           <span className="ml-1 inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm border border-dashed border-border" /> no trades</span>
         </div>
       </div>
       <div className="overflow-x-auto -mx-4 px-4">
         <table className="border-separate border-spacing-1 text-[11.5px]" style={{ minWidth: 120 + sessions.length * 92 }}>
-          <caption className="sr-only">Day of week by recorded session, colored by {metric === "avg" ? "average R" : "total R"}</caption>
+          <caption className="sr-only">Day of week by recorded session, colored by {metric === "avg" ? "average winning R" : "total R"}</caption>
           <thead>
             <tr>
               <th className="w-24" />
@@ -103,12 +103,12 @@ function Heatmap({ cells, days }: { cells: DaySessionMetrics[]; days: Map<string
             <span className="font-medium">{dayName(sel.dayId)} · {sel.session}</span>
             <span className="num">n {sel.totalTrades}{sel.rSample !== sel.totalTrades ? ` (${sel.rSample} with R)` : ""}</span>
             <span className="num">Win {ratio(sel.winRate)}</span>
-            <span className="num">Avg {rFmt(sel.averageR)}</span>
+            <span className="num">Avg winning R {rFmt(sel.averageWinningR ?? null)}</span>
             <span className="num">Total {rFmt(sel.rSample ? sel.totalR : null)}</span>
             <span className="num">PF {pf(sel)}</span>
             {sel.rSample < MIN_SAMPLE && <span className="text-caution text-[11px]">Small R sample: {sel.rSample}&lt;{MIN_SAMPLE}</span>}
           </div>
-        ) : <span className="text-muted-foreground">Hover, tap or tab to a cell for full details. Dashed cells have no trades; a measured 0R is shaded neutral grey.</span>}
+        ) : <span className="text-muted-foreground">Hover, tap or tab to a cell for full details. Dashed cells have no trades. Avg winning R excludes losses and breakevens; no winners shows —. Total R includes every recorded result.</span>}
       </div>
     </div>
   );
@@ -131,14 +131,14 @@ export function TemporalPerformance({ temporal, bySession, currency }: { tempora
       </Panel>
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="By day of week" meta={`Entry day · ${tz}`}>
-          <GroupTable rows={temporal.byDayOfWeek} currency={currency} label="Day" />
+          <GroupTable winningAverage rows={temporal.byDayOfWeek} currency={currency} label="Day" />
         </Panel>
         <Panel title="By hour of day" meta={`Entry hour · ${tz} · hours with trades`}>
-          <GroupTable rows={hours} currency={currency} label="Hour" empty={<div className="text-sm text-muted-foreground py-6 text-center">No closed trades with a valid entry time in scope.</div>} />
+          <GroupTable winningAverage rows={hours} currency={currency} label="Hour" empty={<div className="text-sm text-muted-foreground py-6 text-center">No closed trades with a valid entry time in scope.</div>} />
         </Panel>
       </div>
       <Panel title="By session" meta="Recorded trade session · closed trades · current filters">
-        <GroupTable rows={bySession} currency={currency} label="Session" />
+        <GroupTable winningAverage rows={bySession} currency={currency} label="Session" />
         <p className="mt-3 text-xs text-muted-foreground">Compare trade count, win rate and R by session. Small samples are flagged; results become more meaningful as you log more trades.</p>
       </Panel>
     </div>

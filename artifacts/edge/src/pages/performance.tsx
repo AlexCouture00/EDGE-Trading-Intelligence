@@ -44,23 +44,23 @@ export default function Performance() {
           </div>
           <Panel title="Monthly" meta="By exit month">
             <GroupBars rows={monthly} metric="totalR" currency={cur} height={200} />
-            <div className="mt-3"><GroupTable rows={monthly} currency={cur} label="Month" /></div>
+            <div className="mt-3"><GroupTable winningAverage rows={monthly} currency={cur} label="Month" /></div>
           </Panel>
           <div className="grid gap-4 xl:grid-cols-[1fr_420px]">
-            <Panel title="By instrument"><GroupTable rows={a.byInstrument} currency={cur} label="Symbol" /></Panel>
-            <Panel title="By direction"><GroupTable rows={a.byDirection} currency={cur} label="Side" /></Panel>
+            <Panel title="By instrument"><GroupTable winningAverage rows={a.byInstrument} currency={cur} label="Symbol" /></Panel>
+            <Panel title="By direction"><GroupTable winningAverage rows={a.byDirection} currency={cur} label="Side" /></Panel>
           </div>
           <TemporalPerformance temporal={a.temporal} bySession={a.bySession} currency={cur} />
           <div className="grid gap-4 xl:grid-cols-2">
             <Panel title="By market regime" meta="Closed trades · current filters · results in R">
-              <GroupTable rows={a.byRegime ?? []} currency={cur} label="Market regime" />
+              <GroupTable winningAverage rows={a.byRegime ?? []} currency={cur} label="Market regime" />
             </Panel>
             <Panel title="By volatility" meta="Closed trades · current filters · results in R">
-              <GroupTable rows={a.byVolatility ?? []} currency={cur} label="Volatility" />
+              <GroupTable winningAverage rows={a.byVolatility ?? []} currency={cur} label="Volatility" />
             </Panel>
           </div>
           <Panel title="By Market regime + volatility" meta="Combined conditions · closed trades · current filters · results in R">
-            <GroupTable rows={a.byRegimeVolatility ?? []} currency={cur} label="Market regime · Volatility" />
+            <GroupTable winningAverage rows={a.byRegimeVolatility ?? []} currency={cur} label="Market regime · Volatility" />
           </Panel>
           <MfePerformance data={a.mfe} />
         </div>

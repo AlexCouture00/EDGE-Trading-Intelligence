@@ -794,13 +794,14 @@ components:
         drawdown: { type: number }
     MfeMetrics:
       type: object
-      required: [totalTrades, recordedCount, pairedCount, averageMfeR, averageRealizedR, averageGivebackR]
+      required: [totalTrades, recordedCount, pairedCount, averageMfeR, averageRealizedR, averageGivebackR, averageWinningR]
       properties:
         totalTrades: { type: integer }
         recordedCount: { type: integer }
         pairedCount: { type: integer }
         averageMfeR: { type: ["number", "null"] }
         averageRealizedR: { type: ["number", "null"] }
+        averageWinningR: { type: ["number", "null"], description: Average positive realized R among the paired closed trades with both MFE and realized R recorded; null without winners. }
         averageGivebackR: { type: ["number", "null"], description: Average MFE minus realized R for the same paired trades. Not a hypothetical executable profit. }
     MfeGroup:
       allOf:

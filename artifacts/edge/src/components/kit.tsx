@@ -151,8 +151,8 @@ export function WriteGate({ children, compact }: { children?: ReactNode; compact
   );
 }
 
-export function GroupTable({ rows, currency, label = "Group", empty, onRowClick, minSample = MIN_SAMPLE, showColor }: {
-  rows: GroupMetrics[]; currency: string; label?: string; empty?: ReactNode; onRowClick?: (g: GroupMetrics) => void; minSample?: number; showColor?: boolean;
+export function GroupTable({ rows, currency, label = "Group", empty, onRowClick, minSample = MIN_SAMPLE, showColor, winningAverage = false }: {
+  rows: GroupMetrics[]; currency: string; label?: string; empty?: ReactNode; onRowClick?: (g: GroupMetrics) => void; minSample?: number; showColor?: boolean; winningAverage?: boolean;
 }) {
   if (!rows.length) return <>{empty ?? <div className="text-sm text-muted-foreground py-6 text-center">No closed trades in scope.</div>}</>;
   return (
@@ -163,7 +163,7 @@ export function GroupTable({ rows, currency, label = "Group", empty, onRowClick,
             <th className="font-normal px-4 py-2">{label}</th>
             <th className="font-normal px-3 py-2 text-right">Trades</th>
             <th className="font-normal px-3 py-2 text-right">Win rate</th>
-            <th className="font-normal px-3 py-2 text-right">Avg R</th>
+            <th className="font-normal px-3 py-2 text-right">{winningAverage ? "Avg winning R" : "Avg R"}</th>
             <th className="font-normal px-3 py-2 text-right">Total R</th>
             <th className="font-normal px-4 py-2 text-right">PF (R)</th>
           </tr>
@@ -182,7 +182,7 @@ export function GroupTable({ rows, currency, label = "Group", empty, onRowClick,
                 </td>
                 <td className="px-3 py-2.5 text-right num">{g.totalTrades}</td>
                 <td className={cn("px-3 py-2.5 text-right num", low && "text-muted-foreground")}>{ratio(g.winRate)}</td>
-                <td className="px-3 py-2.5 text-right"><R v={g.averageR} /></td>
+                <td className="px-3 py-2.5 text-right"><R v={winningAverage ? g.averageWinningR ?? null : g.averageR} /></td>
                 <td className="px-3 py-2.5 text-right"><R v={g.rSample ? g.totalR : null} /></td>
                 <td className="px-4 py-2.5 text-right num">{pf(g)}</td>
               </tr>
