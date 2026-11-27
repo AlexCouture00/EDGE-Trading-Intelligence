@@ -33,7 +33,7 @@ export default function Performance() {
             <Stat label="Trades" value={a.metrics.totalTrades} sub={`${a.openTrades} open, excluded`} />
             <Stat label="Win rate" value={ratio(a.metrics.winRate)} />
             <Stat label="Profit factor (R)" value={pf(a.metrics)} />
-            <Stat label="Avg R" value={rFmt(a.metrics.averageR)} valueClass={tone(a.metrics.averageR)} />
+            <Stat label="Avg winning R" value={rFmt(a.metrics.averageWinningR ?? null)} valueClass={tone(a.metrics.averageWinningR ?? null)} sub="Winning trades only" />
             <Stat label="Median R" value={rFmt(a.metrics.medianR)} valueClass={tone(a.metrics.medianR)} />
             <Stat label="Total R" value={rFmt(a.metrics.rSample ? a.metrics.totalR : null)} valueClass={tone(a.metrics.totalR)} />
             <Stat label="Avg hold" value={hours(a.metrics.averageHoldHours)} />

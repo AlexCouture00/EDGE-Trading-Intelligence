@@ -5,6 +5,7 @@ export function summarizeJournal(rows: Outcome[]) {
   const closed = rows.filter(t => t.status === "closed");
   const financial = summarize(rows);
   const measured = closed.filter(t => t.realizedR !== null);
+  const winners = measured.filter(t => D(t.realizedR!).gt(0));
   const normalized = summarize(measured.map(t => ({ ...t, netPnl: t.realizedR })));
   const process = summarize(closed.map(t => ({ ...t, netPnl: "0" })));
   let streak = 0;
@@ -15,6 +16,7 @@ export function summarizeJournal(rows: Outcome[]) {
   return {
     ...financial,
     ...normalized,
+    averageWinningR: winners.length ? winners.reduce((sum, t) => sum.plus(t.realizedR!), D()).div(winners.length).toNumber() : null,
     totalTrades: closed.length,
     netPnl: financial.netPnl,
     maxDrawdown: financial.maxDrawdown,

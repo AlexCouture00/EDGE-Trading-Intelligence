@@ -16,6 +16,11 @@ export interface Metrics {
   netPnl: string;
   /** @nullable */
   averageR: number | null;
+  /**
+     * Average realized R of closed trades with strictly positive recorded R; null when there are no winning trades.
+     * @nullable
+     */
+  averageWinningR?: number | null;
   /** @nullable */
   medianR: number | null;
   totalR: number;

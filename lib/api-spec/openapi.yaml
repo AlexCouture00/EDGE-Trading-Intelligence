@@ -761,6 +761,7 @@ components:
         winRate: { type: ["number", "null"] }
         netPnl: { type: string }
         averageR: { type: ["number", "null"] }
+        averageWinningR: { type: ["number", "null"], description: Average realized R of closed trades with strictly positive recorded R; null when there are no winning trades. }
         medianR: { type: ["number", "null"] }
         totalR: { type: number }
         profitFactor: { type: ["number", "null"], description: Null when no losses; see profitFactorInfinite }

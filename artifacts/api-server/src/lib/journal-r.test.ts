@@ -47,3 +47,24 @@ test("R result metrics exclude drafts, open trades and unavailable historical R"
   assert.equal(report.winRate, null);
   assert.equal(report.averageR, null);
 });
+
+test("average winning R excludes losses, breakevens, missing results and unfinished trades", () => {
+  const input = [
+    row("2", "-100"), row("4", null, 2), row("-1", "100", 3),
+    row("0"), row(null, "100"),
+    { ...row("99"), status: "open" }, { ...row("99"), status: "draft" },
+  ];
+  const snapshot = structuredClone(input);
+  const report = summarizeJournal(input);
+  assert.equal(report.averageWinningR, 3);
+  assert.equal(report.averageR, 1.25, "overall expectancy stays unchanged");
+  assert.equal(report.totalR, 5);
+  assert.deepEqual(input, snapshot);
+});
+
+test("average winning R is null without winners and uses decimal arithmetic", () => {
+  for (const rows of [[], [row("-1"), row("0"), row(null)], [{ ...row("2"), status: "open" }]]) {
+    assert.equal(summarizeJournal(rows).averageWinningR, null);
+  }
+  assert.equal(summarizeJournal([row("0.1"), row("0.2")]).averageWinningR, 0.15);
+});
