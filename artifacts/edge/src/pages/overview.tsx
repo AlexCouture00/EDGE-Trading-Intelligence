@@ -61,7 +61,7 @@ export default function Overview() {
                 <Panel title="Cumulative R" meta="Closed trades with a recorded R result" actions={<Link href="/performance" className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1" data-testid="link-to-performance">Performance <ArrowUpRight className="h-3 w-3" /></Link>}>
                   {m.rSample ? <RChart data={a.equity} /> : <div className="h-[260px] flex items-center justify-center text-sm text-muted-foreground">No recorded R results in this scope.</div>}
                 </Panel>
-                <Panel title="Confluences, observed" meta="Association, not causation" bodyClass="p-0" actions={<Link href="/confluences" className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1" data-testid="link-to-confluences">Analyze <ArrowUpRight className="h-3 w-3" /></Link>}>
+                <Panel title="Confluences, observed" meta="Association, not causation" bodyClass="p-0" actions={<Link href="/performance#by-confluence" className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1" data-testid="link-to-confluences">Analyze <ArrowUpRight className="h-3 w-3" /></Link>}>
                   {a.confluences.length === 0 ? <div className="p-6 text-sm text-muted-foreground">Tag confluences on trades to see them here.</div> : (
                     <ul>
                       {[...a.confluences].sort((x, y) => (y.averageR ?? -99) - (x.averageR ?? -99)).slice(0, 7).map((c) => (

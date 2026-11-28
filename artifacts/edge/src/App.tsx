@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
+import { Redirect, Route, Switch, useLocation, Router as WouterRouter } from "wouter";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +14,6 @@ import Journal from "@/pages/journal";
 import TradeNew from "@/pages/trade-new";
 import TradeDetail from "@/pages/trade-detail";
 import TradeEdit from "@/pages/trade-edit";
-import Confluences from "@/pages/confluences";
 import Strategies from "@/pages/strategies";
 import Performance from "@/pages/performance";
 import Risk from "@/pages/risk";
@@ -36,7 +35,7 @@ export default function App() {
         <Switch>
           <Route path="/" component={Overview} /><Route path="/journal" component={Journal} />
           <Route path="/trades/new" component={TradeNew} /><Route path="/trades/:id/edit" component={TradeEdit} />
-          <Route path="/trades/:id" component={TradeDetail} /><Route path="/confluences" component={Confluences} />
+          <Route path="/trades/:id" component={TradeDetail} /><Route path="/confluences"><Redirect to="/performance" replace /></Route>
           <Route path="/strategies" component={Strategies} /><Route path="/performance" component={Performance} />
           <Route path="/risk" component={Risk} /><Route path="/psychology" component={Psychology} />
           <Route path="/calendar" component={CalendarPage} /><Route path="/prop-manager" component={PropManager} /><Route path="/playbook" component={Playbook} />

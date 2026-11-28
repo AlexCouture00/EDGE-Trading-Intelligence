@@ -50,6 +50,13 @@ export default function Performance() {
             <Panel title="By instrument"><GroupTable winningAverage rows={a.byInstrument} currency={cur} label="Symbol" /></Panel>
             <Panel title="By direction"><GroupTable winningAverage rows={a.byDirection} currency={cur} label="Side" /></Panel>
           </div>
+          <div id="by-confluence" className="scroll-mt-4">
+            <Panel title="By confluence" meta="Non-archived only · closed trades · current filters · winning-trade average R">
+              <GroupTable winningAverage rows={a.confluences} currency={cur} label="Confluence" showColor
+                empty={<div className="text-sm text-muted-foreground py-6 text-center">No non-archived confluences available.</div>} />
+              <p className="mt-3 text-[11px] text-muted-foreground">A trade can appear under multiple confluences, so row totals should not be added together. Avg winning R excludes losses and break-even trades.</p>
+            </Panel>
+          </div>
           <TemporalPerformance temporal={a.temporal} bySession={a.bySession} currency={cur} />
           <div className="grid gap-4 xl:grid-cols-2">
             <Panel title="By market regime" meta="Closed trades · current filters · results in R">

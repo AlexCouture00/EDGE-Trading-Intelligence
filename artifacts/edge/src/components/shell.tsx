@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { usePrivateAuth } from "@/lib/auth";
-import { BarChart3, BookOpen, CalendarDays, Gauge, Layers, LineChart, LogOut, Menu, NotebookPen, Plus, Brain, Briefcase, Settings, ShieldAlert, X } from "lucide-react";
+import { BarChart3, BookOpen, CalendarDays, Gauge, LineChart, LogOut, Menu, NotebookPen, Plus, Brain, Briefcase, Settings, ShieldAlert, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useMode } from "@/lib/mode";
@@ -12,7 +12,6 @@ const NAV = [
   { group: "Analyze", items: [
     { href: "/", label: "Overview", icon: Gauge },
     { href: "/performance", label: "Performance", icon: LineChart },
-    { href: "/confluences", label: "Confluences", icon: Layers },
     { href: "/risk", label: "Risk", icon: ShieldAlert },
     { href: "/psychology", label: "Psychology", icon: Brain },
   ]},
