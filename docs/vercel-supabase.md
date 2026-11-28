@@ -204,7 +204,7 @@ application publishing are separate operations; use the current workflow in sect
 on a disposable local database, including preservation of an existing account.
 No Supabase migration has been authorized merely by adding these files.
 
-## General trading expenses: nullable firm relationship (pending approval)
+## General trading expenses: approved nullable firm relationship applied
 
 The generated migration `0005_aberrant_nextwave.sql` contains exactly:
 
@@ -217,11 +217,20 @@ creating a fictitious prop firm. It preserves existing rows, foreign keys,
 ownership, indexes, RLS and direct-access restrictions. There is no data backfill,
 new table, cascade rule or automatic migration on startup/deployment.
 
-Apply only after explicit approval, separately for development and Supabase.
-Use the existing verified Session pooler migration connection for Supabase;
-compare every recorded migration hash and timestamp first and allow only this
-reviewed pending migration. Verify nullability, unchanged existing rows and
-security restrictions afterwards. Do not reinitialize or reset either database.
+The owner explicitly approved this change for Supabase only. It was applied via
+the existing certificate-verified Session pooler connection after a read-only
+audit verified the intended project and all five preceding migration hashes and
+timestamps. Postchecks confirmed six matching migrations, an optional UUID firm
+relationship, unchanged foreign keys, unchanged security on all 16 EDGE tables,
+and unchanged contents/counts across all EDGE tables. No records were seeded,
+deleted or rewritten. The Replit development database was not changed.
+
+The maintenance command `pnpm --filter @workspace/db run migrate:general-expenses`
+defaults to a read-only audit. `--apply` additionally requires the exact approval
+confirmation and expected project reference; it permits only the reviewed sixth
+migration and verifies existing records and protections after application.
+Do not rerun earlier release-specific migration scripts or reset either database.
+Application publication requires separate explicit approval.
 
 Account deletion needs no schema migration. The API performs a single
 owner-scoped transaction after exact account-name confirmation, removing only

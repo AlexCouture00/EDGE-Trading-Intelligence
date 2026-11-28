@@ -13,8 +13,9 @@
     "initialize:external": "tsx scripts/initialize-external.ts",
     "migrate:volatility": "tsx scripts/apply-volatility.ts",
     "migrate:mfe": "tsx scripts/apply-mfe.ts",
+    "migrate:general-expenses": "tsx scripts/apply-general-expenses.ts",
     "validate:migrations": "tsx scripts/validate-migrations.ts",
-    "typecheck:scripts": "tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --esModuleInterop --skipLibCheck --strict --types node scripts/initialize-external.ts scripts/validate-migrations.ts scripts/apply-volatility.ts scripts/apply-mfe.ts",
+    "typecheck:scripts": "tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --esModuleInterop --skipLibCheck --strict --types node scripts/initialize-external.ts scripts/validate-migrations.ts scripts/apply-volatility.ts scripts/apply-mfe.ts scripts/apply-general-expenses.ts",
     "test": "tsx --test src/*.test.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
   },
