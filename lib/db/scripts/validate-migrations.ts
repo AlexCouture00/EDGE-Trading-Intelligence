@@ -115,7 +115,7 @@ async function main() {
       const constraints = await client.query("SELECT count(*)::int AS n FROM pg_constraint WHERE contype='f' AND connamespace='public'::regnamespace");
       assert.equal(constraints.rows[0].n, 14);
       const journal = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
-      const migrationEntries = JSON.parse(readFileSync(new URL("../drizzle/meta/_journal.json", import.meta.url), "utf8")).entries as { when: number }[];
+      const migrationEntries = JSON.parse(readFileSync(new URL("../drizzle/meta/_journal.json", import.meta.url), "utf8")).entries as { when: number; tag: string }[];
       const expected = migrationEntries.length;
       assert.equal(journal.rows[0].n, expected);
       await migrate(drizzle(client), { migrationsFolder });
@@ -173,6 +173,25 @@ async function main() {
         assert.equal(security.rows[0].relrowsecurity, true);
         assert.equal(security.rows[0].direct_access_revoked, true);
       }
+      // Simulate an existing firm-linked expense before the general-expenses
+      // upgrade. These fixture changes are only in this disposable database.
+      const expenseFirm = await client.query(
+        "INSERT INTO public.edge_prop_firms(owner_id,data) VALUES ('migration-expense-fixture','{}') RETURNING *",
+      );
+      const expenseCanary = await client.query(
+        "INSERT INTO public.edge_prop_expenses(owner_id,firm_id,data) VALUES ('migration-expense-fixture',$1,$2) RETURNING *",
+        [expenseFirm.rows[0].id, { firmId: expenseFirm.rows[0].id, accountId: null, category: "other", amount: "12.34", currency: "USD", date: "2026-11-01", notes: "Preserve exactly" }],
+      );
+      await client.query("ALTER TABLE public.edge_prop_expenses ALTER COLUMN firm_id SET NOT NULL");
+      const generalExpensesUpgrade = migrationEntries.find(entry => entry.tag === "0005_aberrant_nextwave");
+      assert.ok(generalExpensesUpgrade, "General-expenses migration must be registered");
+      await client.query("DELETE FROM drizzle.__drizzle_migrations WHERE created_at >= $1", [generalExpensesUpgrade.when]);
+      await migrate(drizzle(client), { migrationsFolder });
+      assert.deepEqual((await client.query("SELECT * FROM public.edge_prop_expenses WHERE id=$1", [expenseCanary.rows[0].id])).rows, expenseCanary.rows);
+      const expenseColumn = await client.query("SELECT is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='edge_prop_expenses' AND column_name='firm_id'");
+      assert.deepEqual(expenseColumn.rows, [{ is_nullable: "YES" }]);
+      await client.query("DELETE FROM public.edge_prop_expenses WHERE id=$1", [expenseCanary.rows[0].id]);
+      await client.query("DELETE FROM public.edge_prop_firms WHERE id=$1", [expenseFirm.rows[0].id]);
       const upgradeJournal = await client.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations");
       assert.equal(upgradeJournal.rows[0].n, expected);
       await client.query("DELETE FROM public.edge_trades WHERE id=$1", [tradeCanary.rows[0].id]);

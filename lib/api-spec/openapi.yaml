@@ -58,10 +58,15 @@ paths:
         "409": { description: Historical identity cannot be rewritten }
     delete:
       operationId: deletePropRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PropDeletionConfirmation" }
       responses:
-        "204": { description: "Expense, payout or rule removed" }
+        "204": { description: "Expense, payout, rule or confirmed account and its linked prop history removed" }
         "404": { description: Not found for current owner }
-        "409": { description: Archive firms and accounts; retain balance and challenge histories }
+        "409": { description: Account name confirmation required; firms and individual history entries cannot be deleted }
   /edge/day-notes:
     get:
       operationId: listDayNotes
@@ -500,14 +505,18 @@ components:
         verifiedOn: { type: [string, "null"], pattern: '^\d{4}-\d{2}-\d{2}$' }
         notes: { type: string, maxLength: 10000 }
         confirmed: { type: boolean }
+    PropDeletionConfirmation:
+      type: object
+      properties:
+        confirmationName: { type: string, maxLength: 200, description: Exact account name required to permanently delete a prop account and its linked history. }
     PropExpenseInput:
       type: object
       additionalProperties: false
       required: [firmId, accountId, category, amount, currency, date, notes]
       properties:
-        firmId: { type: string, format: uuid }
+        firmId: { type: ["string", "null"], format: uuid }
         accountId: { type: [string, "null"], format: uuid }
-        category: { type: string, enum: [challenge_purchase, challenge_reset, activation, subscription, platform, data, withdrawal, other] }
+        category: { type: string, enum: [challenge_purchase, challenge_reset, activation, subscription, platform, data, withdrawal, software, other] }
         amount: { $ref: "#/components/schemas/PropMoney" }
         currency: { type: string, pattern: '^[A-Z]{3}$' }
         date: { $ref: "#/components/schemas/PropDay" }

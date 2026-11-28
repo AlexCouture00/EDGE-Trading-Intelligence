@@ -45,6 +45,7 @@ import type {
   ListDayNotesParams,
   ListStrategiesParams,
   ListTradesParams,
+  PropDeletionConfirmation,
   PropPortfolio,
   PropRecordInput,
   PropSaved,
@@ -355,14 +356,29 @@ export const getDeletePropRecordUrl = (kind: 'firms' | 'accounts' | 'balances' |
 }
 
 export const deletePropRecord = async (kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts',
-    id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+    id: string,
+    propDeletionConfirmation: PropDeletionConfirmation, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
 
-  return customFetch<void>(getDeletePropRecordUrl(kind,id),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getDeletePropRecordUrl(kind,id),
   {
     ...options,
-    method: 'DELETE'
-
-
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propDeletionConfirmation)
   }
 );}
 
@@ -387,9 +403,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePropRecord>>, DeletePropRecordMutationVariables> = (props) => {
-          const {kind,id} = props ?? {};
+          const {kind,id,data} = props ?? {};
 
-          return  deletePropRecord(kind,id,requestOptions)
+          return  deletePropRecord(kind,id,data,requestOptions)
         }
 
 
@@ -400,9 +416,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type DeletePropRecordMutationResult = NonNullable<Awaited<ReturnType<typeof deletePropRecord>>>
-
+    export type DeletePropRecordMutationBody = BodyType<PropDeletionConfirmation>
     export type DeletePropRecordMutationError = ErrorType<void>
-    export type DeletePropRecordMutationVariables = {kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts';id: string}
+    export type DeletePropRecordMutationVariables = {kind: 'firms' | 'accounts' | 'balances' | 'challenges' | 'rules' | 'expenses' | 'payouts';id: string;data: BodyType<PropDeletionConfirmation>}
 
     export const useDeletePropRecord = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePropRecord>>, TError,DeletePropRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

@@ -5,6 +5,7 @@ import { sumMoney, type Portfolio } from "@workspace/prop-math";
 import { Caution, Empty, Panel } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { money } from "@/lib/format";
+import { monthLabel } from "@/lib/month-label";
 import { ConfirmDelete, EXPENSE_CATEGORY, EditorDialog, Field, MoneyIn, PAYOUT_STATUS, Pill, Sel, TextArea, TextIn, UMONEY_RE, nn, statusTone, today, usePropMutations } from "./shared";
 
 const NONE = "__none";
@@ -19,12 +20,12 @@ export function Expenses({ p }: { p: Portfolio }) {
   const { save, remove } = usePropMutations();
   const [editing, setEditing] = useState<{ id: string | null; draft: PropExpenseInput } | null>(null);
   const [deleting, setDeleting] = useState<PropExpense | null>(null);
-  const firm = (id: string) => p.firms.find((f) => f.id === id)?.name ?? "Unknown";
+  const firm = (id: string | null) => id ? p.firms.find((f) => f.id === id)?.name ?? "Unknown" : "General trading";
   const acc = (id: string | null) => (id ? p.accounts.find((a) => a.id === id)?.name ?? "Unknown" : "Firm-level");
-  const blank: PropExpenseInput = { firmId: p.firms[0]?.id ?? "", accountId: null, category: "challenge_purchase", amount: "", currency: "USD", date: today(), notes: "" };
+  const blank: PropExpenseInput = { firmId: null, accountId: null, category: "software", amount: "", currency: "USD", date: today(), notes: "" };
   const rows = [...p.expenses].sort((a, b) => b.date.localeCompare(a.date));
   const byFirm = totalsBy(p.expenses, (e) => `${firm(e.firmId)}|${e.currency}`);
-  const byAcc = totalsBy(p.expenses, (e) => `${acc(e.accountId)}|${e.currency}`);
+  const byAcc = totalsBy(p.expenses, (e) => `${e.firmId ? acc(e.accountId) : "General trading"}|${e.currency}`);
   const byMonth = totalsBy(p.expenses, (e) => `${e.date.slice(0, 7)}|${e.currency}`).sort((a, b) => b.k.localeCompare(a.k));
   const lifetime = totalsBy(p.expenses, (e) => `Lifetime|${e.currency}`);
   return (
@@ -34,21 +35,21 @@ export function Expenses({ p }: { p: Portfolio }) {
           {[["Lifetime", lifetime], ["Per firm", byFirm], ["Per account", byAcc], ["Monthly", byMonth]].map(([t, list]) => (
             <Panel key={t as string} title={t as string} bodyClass="p-0 max-h-[220px] overflow-y-auto">
               {(list as { k: string; total: string }[]).map(({ k, total }) => { const [n, c] = k.split("|"); return (
-                <div key={k} className="flex justify-between gap-3 px-4 py-2 text-[12.5px] border-b border-card-border/60 last:border-0"><span className="truncate text-muted-foreground">{n}</span><span className="num">{money(total, c)}</span></div>
+                <div key={k} className="flex justify-between gap-3 px-4 py-2 text-[12.5px] border-b border-card-border/60 last:border-0"><span className="truncate text-muted-foreground">{t === "Monthly" ? monthLabel(n) : n}</span><span className="num">{money(total, c)}</span></div>
               ); })}
             </Panel>
           ))}
         </div>
       )}
       <Panel title="Expenses" meta="kept even when accounts fail, close or archive" bodyClass="p-0"
-        actions={<Button size="sm" disabled={!p.firms.length} onClick={() => setEditing({ id: null, draft: blank })} data-testid="button-add-expense"><Plus className="h-3.5 w-3.5 mr-1" />Add expense</Button>}>
-        {!rows.length ? <div className="p-4"><Empty icon={<Receipt className="h-4 w-4" />} title="No expenses" body="Record challenge purchases, resets, activations and subscriptions to compute net cash profit." /></div> : (
+        actions={<Button size="sm" onClick={() => setEditing({ id: null, draft: blank })} data-testid="button-add-expense"><Plus className="h-3.5 w-3.5 mr-1" />Add expense</Button>}>
+        {!rows.length ? <div className="p-4"><Empty icon={<Receipt className="h-4 w-4" />} title="No expenses" body="Record software, subscriptions, other trading costs or prop firm fees to compute net cash profit. General trading expenses need no firm or account." /></div> : (
           <div className="overflow-x-auto"><table className="w-full text-[12.5px] min-w-[680px]">
             <thead><tr className="text-left text-muted-foreground border-b border-card-border"><th className="font-normal px-4 py-2">Date</th><th className="font-normal px-3 py-2">Firm / account</th><th className="font-normal px-3 py-2">Category</th><th className="font-normal px-3 py-2 text-right">Amount</th><th className="font-normal px-3 py-2">Notes</th><th className="px-4" /></tr></thead>
             <tbody>{rows.map((e) => (
               <tr key={e.id} className="border-b border-card-border/60 last:border-0 row-hover" data-testid={`row-expense-${e.id}`}>
                 <td className="px-4 py-2 num text-[11.5px]">{e.date}</td>
-                <td className="px-3 py-2">{firm(e.firmId)}<span className="text-muted-foreground"> · {acc(e.accountId)}</span></td>
+                <td className="px-3 py-2">{firm(e.firmId)}{e.firmId && <span className="text-muted-foreground"> · {acc(e.accountId)}</span>}</td>
                 <td className="px-3 py-2">{EXPENSE_CATEGORY[e.category]}</td>
                 <td className="px-3 py-2 text-right num text-neg">{money(e.amount, e.currency)}</td>
                 <td className="px-3 py-2 text-muted-foreground max-w-[220px] truncate">{e.notes}</td>
@@ -64,12 +65,12 @@ export function Expenses({ p }: { p: Portfolio }) {
       {editing && (
         <EditorDialog key={editing.id ?? "new"} open onClose={() => setEditing(null)} initial={editing.draft} title={editing.id ? "Edit expense" : "Add expense"}
           description="Payout processing fees belong on the payout record. Do not add them here again."
-          validate={(d) => !d.firmId ? "Choose a firm." : !UMONEY_RE.test(d.amount) ? "Amount must be a positive decimal." : !/^[A-Z]{3}$/.test(d.currency) ? "Currency must be a 3-letter code." : null}
+          validate={(d) => !UMONEY_RE.test(d.amount) ? "Amount must be a positive decimal." : !/^[A-Z]{3}$/.test(d.currency) ? "Currency must be a 3-letter code." : null}
           onSubmit={(d) => save("expenses", editing.id, d)}>
           {(d, set) => <>
-            <Field label="Firm"><Sel value={d.firmId} disabled={!!editing.id} onChange={(v) => { set("firmId", v); set("accountId", null); }} options={p.firms.map((f) => [f.id, f.name])} testId="select-expense-firm" /></Field>
+            <Field label="Firm (optional)"><Sel value={d.firmId ?? NONE} disabled={!!editing.id} onChange={(v) => { set("firmId", v === NONE ? null : v); set("accountId", null); }} options={[[NONE, "General trading · no firm"], ...p.firms.map((f) => [f.id, f.name] as [string, string])]} testId="select-expense-firm" /></Field>
             <Field label="Account (optional)"><Sel value={d.accountId ?? NONE} disabled={!!editing.id} onChange={(v) => { set("accountId", v === NONE ? null : v); const a = p.accounts.find((x) => x.id === v); if (a) set("currency", a.currency); }}
-              options={[[NONE, "Firm-level"], ...p.accounts.filter((a) => a.firmId === d.firmId).map((a) => [a.id, a.name] as [string, string])]} testId="select-expense-account" /></Field>
+              options={[[NONE, d.firmId ? "Firm-level" : "Not linked"], ...p.accounts.filter((a) => a.firmId === d.firmId).map((a) => [a.id, a.name] as [string, string])]} testId="select-expense-account" /></Field>
             <Field label="Category"><Sel value={d.category} onChange={(v) => set("category", v as PropExpenseInput["category"])} options={Object.entries(EXPENSE_CATEGORY)} testId="select-expense-category" /></Field>
             <Field label="Date"><TextIn type="date" value={d.date} onChange={(v) => set("date", v)} testId="input-expense-date" /></Field>
             <Field label="Amount"><MoneyIn value={d.amount} onChange={(v) => set("amount", v)} testId="input-expense-amount" /></Field>

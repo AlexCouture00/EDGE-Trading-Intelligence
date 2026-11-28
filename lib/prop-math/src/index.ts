@@ -105,8 +105,9 @@ export function portfolioReport(p: Portfolio, f: PortfolioFilters) {
   const active = selected.filter(a => activeStatuses.has(a.status) && activeFirmIds.has(a.firmId));
   const funded = active.filter(a => a.status === "funded");
   const evaluations = active.filter(a => a.status === "evaluation");
-  // Firm-level expenses remain included unless account-only filters are active.
-  const expenses = p.expenses.filter(e => e.currency === f.currency && firmIds.has(e.firmId) && inDate(e.date)
+  // General trading costs belong only to the all-firms view; never attribute
+  // them to a firm or an account-specific filter.
+  const expenses = p.expenses.filter(e => e.currency === f.currency && (e.firmId ? firmIds.has(e.firmId) : !f.firmId) && inDate(e.date)
     && (e.accountId ? ids.has(e.accountId) : !f.marketType && !f.status));
   const payouts = p.payouts.filter(x => x.currency === f.currency && ids.has(x.accountId));
   const paid = payouts.filter(x => x.status === "paid" && x.paidOn && inDate(x.paidOn));
@@ -145,7 +146,10 @@ export function portfolioReport(p: Portfolio, f: PortfolioFilters) {
     monthly,
     allocationByFirm: firms.map(firm => ({ name: firm.name, value: sumMoney(active.filter(a => a.firmId === firm.id).map(a => a.nominalSize)) })),
     statusDistribution: [...new Set(selected.map(a => a.status))].map(status => ({ name: status, value: selected.filter(a => a.status === status).length })),
-    expensesByFirm: firms.map(firm => ({ id: firm.id, name: firm.name, value: sumMoney(expenses.filter(e => e.firmId === firm.id).map(e => e.amount)) })),
+    expensesByFirm: [
+      ...firms.map(firm => ({ id: firm.id, name: firm.name, value: sumMoney(expenses.filter(e => e.firmId === firm.id).map(e => e.amount)) })),
+      ...(expenses.some(e => !e.firmId) ? [{ id: "general", name: "General trading", value: sumMoney(expenses.filter(e => !e.firmId).map(e => e.amount)) }] : []),
+    ],
     expensesByAccount: selected.map(a => ({ id: a.id, name: a.name, value: sumMoney(expenses.filter(e => e.accountId === a.id).map(e => e.amount)) })),
   };
 }

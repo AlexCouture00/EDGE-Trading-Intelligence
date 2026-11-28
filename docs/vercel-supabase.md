@@ -204,6 +204,34 @@ application publishing are separate operations; use the current workflow in sect
 on a disposable local database, including preservation of an existing account.
 No Supabase migration has been authorized merely by adding these files.
 
+## General trading expenses: nullable firm relationship (pending approval)
+
+The generated migration `0005_aberrant_nextwave.sql` contains exactly:
+
+```sql
+ALTER TABLE "edge_prop_expenses" ALTER COLUMN "firm_id" DROP NOT NULL;
+```
+
+This allows software, subscriptions and other general trading costs without
+creating a fictitious prop firm. It preserves existing rows, foreign keys,
+ownership, indexes, RLS and direct-access restrictions. There is no data backfill,
+new table, cascade rule or automatic migration on startup/deployment.
+
+Apply only after explicit approval, separately for development and Supabase.
+Use the existing verified Session pooler migration connection for Supabase;
+compare every recorded migration hash and timestamp first and allow only this
+reviewed pending migration. Verify nullability, unchanged existing rows and
+security restrictions afterwards. Do not reinitialize or reset either database.
+
+Account deletion needs no schema migration. The API performs a single
+owner-scoped transaction after exact account-name confirmation, removing only
+that account's prop balances, challenges, rules, linked expenses and payouts,
+then the prop account. Firms, firm-level/general expenses, journal accounts and
+journal trades are not deleted. Archiving continues to preserve history.
+
+The Challenges tab is hidden; existing challenge records are retained unless
+their parent prop account is explicitly deleted.
+
 ## MFE tracking: additive migration
 
 MFE is the manually recorded maximum favorable excursion in R while a trade

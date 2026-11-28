@@ -6,9 +6,15 @@ Prop Firm Manager is part of the private personal journal. Nominal prop allocati
 
 **Why:** The user explicitly required these financial distinctions in the confirmed feature documents.
 
-Net realized prop cash profit uses only actually received net payouts less expenses, before personal income taxes. Pending payouts are separate. Snapshot balances and cash transactions are separate evidence: a payout must not automatically change a balance. Preserve history across failed, archived or completed accounts and challenge progression.
+Net realized prop cash profit uses only actually received net payouts less expenses, before personal income taxes. Pending payouts are separate. Snapshot balances and cash transactions are separate evidence: a payout must not automatically change a balance. Preserve history across failed, archived or completed accounts and challenge progression, except when the owner explicitly confirms permanent account deletion.
 
 **Why:** The user explicitly required avoiding double counting and losing historical results.
+
+The owner chose “Supprimer compte et historique lié” for the prop-account deletion option, not merely hiding accounts. Remove only the selected prop account and its linked prop history after explicit in-app confirmation. Keep journal trades, other accounts and expenses not linked to that account intact.
+
+**Why:** The user explicitly chose permanent deletion after being warned that it changes financial statistics.
+
+**How to apply:** Do not replace this with archiving. Adding the capability does not authorize deleting existing accounts during development or testing.
 
 Rules must be customized and confirmed per account, not fetched or fabricated as active. When manual snapshots cannot establish daily, intraday, trailing, equity or other rule compliance, show "Not enough data"; reaching a target does not establish that an evaluation passed.
 

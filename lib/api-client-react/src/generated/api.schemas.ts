@@ -255,6 +255,14 @@ export interface PropRuleInput {
   confirmed: boolean;
 }
 
+export interface PropDeletionConfirmation {
+  /**
+     * Exact account name required to permanently delete a prop account and its linked history.
+     * @maxLength 200
+     */
+  confirmationName?: string;
+}
+
 export type PropExpenseInputCategory = typeof PropExpenseInputCategory[keyof typeof PropExpenseInputCategory];
 
 
@@ -266,11 +274,13 @@ export const PropExpenseInputCategory = {
   platform: 'platform',
   data: 'data',
   withdrawal: 'withdrawal',
+  software: 'software',
   other: 'other',
 } as const;
 
 export interface PropExpenseInput {
-  firmId: string;
+  /** @nullable */
+  firmId: string | null;
   /** @nullable */
   accountId: string | null;
   category: PropExpenseInputCategory;

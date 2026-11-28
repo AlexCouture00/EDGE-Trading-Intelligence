@@ -4,7 +4,7 @@ import {
   db, accounts, propFirms, propAccounts, propBalances,
   propChallenges, propRules, propExpenses, propPayouts,
 } from "@workspace/db";
-import { CreatePropRecordBody, GetPropManagerResponse, CreatePropRecordParams } from "@workspace/api-zod";
+import { CreatePropRecordBody, GetPropManagerResponse, CreatePropRecordParams, DeletePropRecordBody } from "@workspace/api-zod";
 import { balanceHistory, subtractMoney } from "@workspace/prop-math";
 import { HttpError, parseId } from "../lib/edge-data";
 
@@ -105,10 +105,13 @@ async function save(kind: Kind, ownerId: string, raw: unknown, id?: string) {
         if (data[key] !== existing.data[key]) throw new HttpError(409, "A completed phase is historical. Add the next phase instead of rewriting its result.");
       }
     }
-    const relationships: { firmId?: string; accountId?: string | null; journalAccountId?: string | null } = {};
+    const relationships: { firmId?: string | null; accountId?: string | null; journalAccountId?: string | null } = {};
     if (typeof data.firmId === "string") {
       await owned(tx, "firms", ownerId, data.firmId);
       relationships.firmId = data.firmId;
+    } else if (kind === "expenses") relationships.firmId = null;
+    if (kind === "expenses" && data.accountId && !data.firmId) {
+      throw new HttpError(400, "General trading expenses cannot reference a prop account. Choose its firm first.");
     }
     let relatedAccount: Awaited<ReturnType<typeof owned>> | undefined;
     if (typeof data.accountId === "string") {
@@ -203,9 +206,23 @@ router.put("/prop-manager/:kind/:id", async (req, res): Promise<void> => {
 router.delete("/prop-manager/:kind/:id", async (req, res): Promise<void> => {
   const kind = kindOf(req.params), id = parseId(req.params.id);
   await db.transaction(async tx => {
-    await owned(tx, kind, res.locals.ownerId, id);
+    const record = await owned(tx, kind, res.locals.ownerId, id);
+    if (kind === "accounts") {
+      const confirmation = DeletePropRecordBody.strict().parse(req.body ?? {});
+      if (confirmation.confirmationName !== record.data.name) {
+        throw new HttpError(409, "Type the exact account name to confirm deletion of the account and all its linked prop history.");
+      }
+      // Parent locking also serializes child saves, which acquire this same lock.
+      // Delete only this owner's linked records, in one transaction. Keep the
+      // firm, firm-level expenses and all journal accounts/trades untouched.
+      for (const child of [propBalances, propChallenges, propRules, propExpenses, propPayouts]) {
+        await tx.delete(child).where(and(eq(child.ownerId, res.locals.ownerId), eq(child.accountId, id)));
+      }
+      await tx.delete(propAccounts).where(and(eq(propAccounts.ownerId, res.locals.ownerId), eq(propAccounts.id, id)));
+      return;
+    }
     if (!["expenses", "payouts", "rules"].includes(kind)) {
-      throw new HttpError(409, "Archive firms and accounts. Balance and challenge history must be retained.");
+      throw new HttpError(409, "Archive firms. Individual balance and challenge history entries cannot be deleted.");
     }
     const table = tables[kind];
     await tx.delete(table).where(and(eq(table.ownerId, res.locals.ownerId), eq(table.id, id)));

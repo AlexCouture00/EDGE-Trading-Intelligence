@@ -1,0 +1,1 @@
+ALTER TABLE "edge_prop_expenses" ALTER COLUMN "firm_id" DROP NOT NULL;

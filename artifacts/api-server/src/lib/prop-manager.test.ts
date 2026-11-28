@@ -5,7 +5,7 @@ import express from "express";
 import { ZodError } from "zod";
 import { eq } from "drizzle-orm";
 import {
-  db, pool, accounts, propFirms, propAccounts, propBalances, propChallenges,
+  db, pool, accounts, trades, propFirms, propAccounts, propBalances, propChallenges,
   propRules, propExpenses, propPayouts,
 } from "@workspace/db";
 import { GetPropManagerResponse } from "@workspace/api-zod";
@@ -191,7 +191,7 @@ test("prop manager persists history and enforces private ownership for every rel
         assert.equal(evaluateRule(p, { ...r, method }).status, "not_enough_data", method);
       }
     });
-    await t.test("archives retain expenses and payouts; account identity and history cannot be deleted", async () => {
+    await t.test("archives retain expenses and payouts; deletion requires exact account confirmation", async () => {
       assert.equal((await request(`/accounts/${accountA}`, "PUT", { ...account(firmA), startingBalance: "1" })).status, 409);
       const before = await load();
       assert.equal((await request(`/accounts/${accountA}`, "PUT", { ...account(firmA), status: "archived" })).status, 200);
@@ -213,11 +213,66 @@ test("prop manager persists history and enforces private ownership for every rel
       }
       assert.equal((await load("b")).accounts.length, 1);
     });
+    await t.test("general trading expenses save without a firm and retain ownership and relationship restrictions", async () => {
+      const general = { ...expense(firmA, null), firmId: null, category: "software", amount: "29.99" };
+      const before = await load();
+      const id = await create("expenses", general);
+      assert.equal((await load()).expenses.find(x => x.id === id)!.firmId, null);
+      const [stored] = await db.select().from(propExpenses).where(eq(propExpenses.id, id));
+      assert.equal(stored.firmId, null);
+      assert.equal((await request(`/expenses/${id}`, "PUT", { ...general, notes: "Software subscription" })).status, 200);
+      assert.equal((await request(`/expenses/${id}`, "PUT", general, "b")).status, 404);
+      assert.equal((await request(`/expenses/${id}`, "DELETE", undefined, "b")).status, 404);
+      assert.equal((await request("/expenses", "POST", { ...general, accountId: accountA })).status, 400);
+      assert.equal((await request("/expenses", "POST", { ...general, accountId: accountB })).status, 400);
+      assert.equal((await request(`/expenses/${id}`, "PUT", { ...general, firmId: firmA })).status, 409);
+      assert.equal((await request(`/expenses/${id}`, "DELETE")).status, 204);
+      assert.deepEqual((await load()).expenses, before.expenses);
+    });
+    await t.test("confirmed account deletion atomically removes only its prop history and preserves journal trades", async () => {
+      const [journal] = await db.insert(accounts).values({ ownerId: ownerA, name: "Keep journal", currency: "USD", initialBalance: "100", type: "backtesting" }).returning();
+      const [journalTrade] = await db.insert(trades).values({ ownerId: ownerA, accountId: journal.id, symbol: "KEEP", regime: "Ranging", pnlSource: "r" }).returning();
+      const id = await create("accounts", { ...account(firmA), name: "Delete only this account", journalAccountId: journal.id });
+      await create("balances", balance(id));
+      await create("challenges", challenge(id));
+      await create("rules", rule(id));
+      await create("expenses", expense(firmA, id));
+      await create("payouts", payout(id));
+      const keptExpenseId = await create("expenses", expense(firmA, null));
+      const generalId = await create("expenses", { ...expense(firmA, null), firmId: null, category: "software" });
+      const before = await load(), otherBefore = await load("b");
+      assert.equal((await request(`/accounts/${id}`, "DELETE", { confirmationName: "Delete only this account" }, "b")).status, 404);
+      for (const body of [undefined, {}, { confirmationName: "wrong" }]) {
+        assert.equal((await request(`/accounts/${id}`, "DELETE", body)).status, 409);
+      }
+      assert.deepEqual(await load(), before);
+      const linkedExpense = before.expenses.find(x => x.accountId === id)!;
+      await db.update(propExpenses).set({ ownerId: ownerB }).where(eq(propExpenses.id, linkedExpense.id));
+      const inconsistentBefore = await load();
+      assert.equal((await request(`/accounts/${id}`, "DELETE", { confirmationName: "Delete only this account" })).status, 500);
+      assert.deepEqual(await load(), inconsistentBefore, "any restricted dependent row must roll back the entire deletion");
+      await db.update(propExpenses).set({ ownerId: ownerA }).where(eq(propExpenses.id, linkedExpense.id));
+      assert.equal((await request(`/accounts/${id}`, "DELETE", { confirmationName: "Delete only this account" })).status, 204);
+      const after = await load();
+      assert.deepEqual(after.accounts, before.accounts.filter(x => x.id !== id));
+      for (const kind of ["balances", "challenges", "rules", "expenses", "payouts"] as const) {
+        assert.deepEqual(after[kind], before[kind].filter(x => x.accountId !== id), kind);
+      }
+      assert.deepEqual(after.firms, before.firms);
+      assert.ok(after.expenses.some(x => x.id === keptExpenseId));
+      assert.ok(after.expenses.some(x => x.id === generalId));
+      assert.deepEqual(await load("b"), otherBefore);
+      assert.deepEqual(await db.select().from(accounts).where(eq(accounts.id, journal.id)), [journal]);
+      assert.deepEqual(await db.select().from(trades).where(eq(trades.id, journalTrade.id)), [journalTrade]);
+      assert.equal((await request(`/accounts/${id}`, "DELETE", { confirmationName: "Delete only this account" })).status, 404);
+    });
   } finally {
     for (const owner of [ownerA, ownerB]) {
       for (const table of [propPayouts, propExpenses, propRules, propChallenges, propBalances, propAccounts, propFirms]) {
         await db.delete(table).where(eq(table.ownerId, owner));
       }
+      await db.delete(trades).where(eq(trades.ownerId, owner));
+      await db.delete(accounts).where(eq(accounts.ownerId, owner));
     }
     await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
     await pool.end();
@@ -253,4 +308,23 @@ test("portfolio financial totals are exact, currency-separated and use actual ca
   const february = portfolioReport(cash, { currency: "USD", from: "2026-02-01", to: "2026-02-28" });
   assert.equal(february.received, "95"); assert.equal(february.pending, "0");
   assert.equal(february.netProfit, "94.8"); // Fee withheld already: never subtract 5 again.
+});
+
+test("general software and other trading costs are included once without inventing firm allocations", () => {
+  const p: Portfolio = { firms: [], accounts: [], balances: [], challenges: [], rules: [], payouts: [], expenses: [
+    { id: "software", firmId: null, accountId: null, category: "software", amount: "0.1", currency: "USD", date: "2026-11-01", notes: "Software" },
+    { id: "other", firmId: null, accountId: null, category: "other", amount: "0.2", currency: "USD", date: "2026-12-01", notes: "Other trading cost" },
+    { id: "cad", firmId: null, accountId: null, category: "subscription", amount: "100", currency: "CAD", date: "2026-11-01", notes: "" },
+  ] };
+  const r = portfolioReport(p, { currency: "USD" });
+  assert.equal(r.expensesTotal, "0.3");
+  assert.equal(r.netProfit, "-0.3");
+  assert.deepEqual(r.monthly.map(x => x.month), ["2026-11", "2026-12"]);
+  assert.equal(r.monthly.at(-1)!.cumulative, "-0.3");
+  assert.deepEqual(r.expensesByFirm, [{ id: "general", name: "General trading", value: "0.3" }]);
+  for (const filter of [{ firmId: "some-firm" }, { marketType: "CFD" }, { status: "funded" }]) {
+    assert.equal(portfolioReport(p, { currency: "USD", ...filter }).expensesTotal, "0");
+  }
+  assert.equal(portfolioReport(p, { currency: "USD", to: "2026-11-30" }).expensesTotal, "0.1");
+  assert.equal(portfolioReport(p, { currency: "CAD" }).expensesTotal, "100");
 });

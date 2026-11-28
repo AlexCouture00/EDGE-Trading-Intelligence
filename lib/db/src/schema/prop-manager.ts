@@ -30,7 +30,7 @@ export const propRules = pgTable("edge_prop_rules", {
 }, t => [index("edge_prop_rules_owner_idx").on(t.ownerId)]);
 export const propExpenses = pgTable("edge_prop_expenses", {
   ...identity(),
-  firmId: uuid("firm_id").notNull().references(() => propFirms.id, { onDelete: "restrict" }),
+  firmId: uuid("firm_id").references(() => propFirms.id, { onDelete: "restrict" }),
   accountId: uuid("account_id").references(() => propAccounts.id, { onDelete: "restrict" }),
 }, t => [index("edge_prop_expenses_owner_idx").on(t.ownerId)]);
 export const propPayouts = pgTable("edge_prop_payouts", {

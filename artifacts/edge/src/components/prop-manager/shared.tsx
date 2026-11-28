@@ -40,7 +40,7 @@ export const RULE_METHOD: Record<string, string> = {
 };
 export const EXPENSE_CATEGORY: Record<string, string> = {
   challenge_purchase: "Challenge purchase", challenge_reset: "Challenge reset", activation: "Activation fee",
-  subscription: "Monthly subscription", platform: "Platform fee", data: "Data fee", withdrawal: "Withdrawal fee", other: "Other",
+  subscription: "Subscription", platform: "Platform fee", data: "Data fee", withdrawal: "Withdrawal fee", software: "Software", other: "Other trading expense",
 };
 export const PAYOUT_STATUS: Record<string, string> = { requested: "Requested", approved: "Approved", paid: "Paid", rejected: "Rejected", cancelled: "Cancelled" };
 
@@ -67,8 +67,8 @@ export function usePropMutations() {
         else await create.mutateAsync({ kind, data });
       } finally { await refresh(); }
     },
-    remove: async (kind: Kind, id: string) => {
-      try { await del.mutateAsync({ kind, id }); } finally { await refresh(); }
+    remove: async (kind: Kind, id: string, confirmationName?: string) => {
+      try { await del.mutateAsync({ kind, id, data: confirmationName === undefined ? {} : { confirmationName } }); } finally { await refresh(); }
     },
   };
 }
@@ -182,20 +182,22 @@ export function EditorDialog<T>({ open, onClose, title, description, initial, va
   );
 }
 
-export function ConfirmDelete({ open, onClose, what, onConfirm }: { open: boolean; onClose: () => void; what: string; onConfirm: () => Promise<void> }) {
+export function ConfirmDelete({ open, onClose, what, onConfirm, description, confirmationName }: { open: boolean; onClose: () => void; what: string; onConfirm: () => Promise<void>; description?: string; confirmationName?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [typed, setTyped] = useState("");
   return (
     <AlertDialog open={open} onOpenChange={(o) => { if (!o && !busy) { setError(null); onClose(); } }}>
       <AlertDialogContent className="bg-card border-card-border">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {what}?</AlertDialogTitle>
-          <AlertDialogDescription>This permanently removes the record and every total that depends on it. This cannot be undone.</AlertDialogDescription>
+          <AlertDialogDescription>{description ?? "This permanently removes the record and every total that depends on it. This cannot be undone."}</AlertDialogDescription>
         </AlertDialogHeader>
+        {confirmationName !== undefined && <Field label={`Type ${confirmationName} to confirm`}><TextIn value={typed} onChange={setTyped} testId="input-delete-confirmation" /></Field>}
         {error && <div className="text-[12.5px] text-neg">{error}</div>}
         <AlertDialogFooter>
-          <AlertDialogCancel data-testid="button-cancel-delete">Keep</AlertDialogCancel>
-          <AlertDialogAction className="bg-destructive text-destructive-foreground" disabled={busy} data-testid="button-confirm-delete"
+          <AlertDialogCancel disabled={busy} data-testid="button-cancel-delete">Keep</AlertDialogCancel>
+          <AlertDialogAction className="bg-destructive text-destructive-foreground" disabled={busy || (confirmationName !== undefined && typed !== confirmationName)} data-testid="button-confirm-delete"
             onClick={(e) => { e.preventDefault(); setBusy(true); onConfirm().then(onClose, (x) => setError(propErr(x))).finally(() => setBusy(false)); }}>
             {busy ? "Deleting" : "Delete"}
           </AlertDialogAction>

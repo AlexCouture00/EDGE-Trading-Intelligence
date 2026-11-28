@@ -36,6 +36,13 @@
       "when": 1795548127162,
       "tag": "0004_abnormal_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795831144091,
+      "tag": "0005_aberrant_nextwave",
+      "breakpoints": true
     }
   ]
 }

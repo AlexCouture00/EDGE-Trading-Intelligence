@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
-import { Pencil, Plus, Wallet } from "lucide-react";
+import { Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import { useListAccounts, type PropAccount, type PropAccountInput, type PropBalance } from "@workspace/api-client-react";
 import { accountSnapshot, balanceDate, type Portfolio } from "@workspace/prop-math";
 import { Empty, Money, Panel } from "@/components/kit";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { dt, money } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
-  ACCOUNT_STATUS, ChartEmpty, EditorDialog, Field, MARKETS, MONEY_RE, MoneyIn, Pill, Sel, TextArea, TextIn, axisTick, nn, statusTone, tipStyle, today, usePropMutations,
+  ACCOUNT_STATUS, ChartEmpty, ConfirmDelete, EditorDialog, Field, MARKETS, MONEY_RE, MoneyIn, Pill, Sel, TextArea, TextIn, axisTick, nn, statusTone, tipStyle, today, usePropMutations,
 } from "./shared";
 import { balanceChartPoints, balanceDateLabel, validateBalanceDate } from "./balance-history";
 
@@ -16,9 +16,10 @@ const NONE = "__none";
 type BalanceDraft = { recordedOn: string; balance: string; equity: string; note: string };
 
 export function Accounts({ p }: { p: Portfolio }) {
-  const { save } = usePropMutations();
+  const { save, remove } = usePropMutations();
   const journal = useListAccounts();
   const [editing, setEditing] = useState<PropAccount | "new" | null>(null);
+  const [deleting, setDeleting] = useState<PropAccount | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [balanceFor, setBalanceFor] = useState<string | null>(null);
   const [fixBalance, setFixBalance] = useState<PropBalance | null>(null);
@@ -64,6 +65,7 @@ export function Accounts({ p }: { p: Portfolio }) {
                       <td className="px-3 py-2.5 text-muted-foreground num text-[11.5px]">{s.balanceDate ? balanceDateLabel(s.balanceDate) : "No snapshot"}</td>
                       <td className="px-4 py-2.5 text-right whitespace-nowrap">
                         <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(a); }} data-testid={`button-edit-account-${a.id}`}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button size="sm" variant="ghost" aria-label={`Delete ${a.name}`} onClick={(e) => { e.stopPropagation(); setDeleting(a); }} data-testid={`button-delete-account-${a.id}`}><Trash2 className="h-3.5 w-3.5 text-neg" /></Button>
                       </td>
                     </tr>
                   );
@@ -76,10 +78,15 @@ export function Accounts({ p }: { p: Portfolio }) {
 
       {current && <BalancePanel p={p} account={current} onAdd={() => setBalanceFor(current.id)} onFix={setFixBalance} />}
 
+      {deleting && <ConfirmDelete key={deleting.id} open what={deleting.name} confirmationName={deleting.name}
+        onClose={() => setDeleting(null)}
+        description={`Permanently delete ${deleting.name} (${deleting.reference || deleting.id}) and its linked history: ${p.balances.filter(x => x.accountId === deleting.id).length} balances, ${p.challenges.filter(x => x.accountId === deleting.id).length} challenges, ${p.rules.filter(x => x.accountId === deleting.id).length} rules, ${p.expenses.filter(x => x.accountId === deleting.id).length} expenses and ${p.payouts.filter(x => x.accountId === deleting.id).length} payouts. Financial totals will change. This cannot be undone. Your journal trades, prop firm, other accounts and expenses not linked to this account will remain unchanged.`}
+        onConfirm={async () => { await remove("accounts", deleting.id, deleting.name); setSelected(null); }} />}
+
       {editing && (
         <EditorDialog key={editing === "new" ? "new" : editing.id} open onClose={() => setEditing(null)} initial={initial}
           title={editing === "new" ? "Add prop account" : `Edit ${editing.name}`}
-          description={frozen ? "Firm, currency, nominal size and starting balance are fixed once an account exists. Archive via status; accounts are never deleted." : "Accounts are archived via status, never deleted. Status and phase are tracked separately."}
+          description={frozen ? "Firm, currency, nominal size and starting balance are fixed once an account exists. Archive via status to keep history, or use Delete to remove the account and its linked prop history." : "Status and phase are tracked separately. Archive to preserve history; deletion permanently removes linked prop history."}
           validate={(d) => !d.firmId ? "Choose a firm." : !d.name.trim() ? "Account name is required." : !/^[A-Z]{3}$/.test(d.currency) ? "Currency must be a 3-letter code, e.g. USD."
             : !MONEY_RE.test(d.nominalSize) || !MONEY_RE.test(d.startingBalance) ? "Enter nominal size and starting balance as plain decimals." : null}
           onSubmit={(d) => save("accounts", editing === "new" ? null : editing.id, { ...d, name: d.name.trim() })}>

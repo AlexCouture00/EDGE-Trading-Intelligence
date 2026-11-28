@@ -10,7 +10,8 @@ import type { PropExpenseInputCategory } from './propExpenseInputCategory';
 import type { PropMoney } from './propMoney';
 
 export interface PropExpenseInput {
-  firmId: string;
+  /** @nullable */
+  firmId: string | null;
   /** @nullable */
   accountId: string | null;
   category: PropExpenseInputCategory;

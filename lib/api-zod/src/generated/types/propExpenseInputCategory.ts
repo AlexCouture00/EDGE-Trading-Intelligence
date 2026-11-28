@@ -17,5 +17,6 @@ export const PropExpenseInputCategory = {
   platform: 'platform',
   data: 'data',
   withdrawal: 'withdrawal',
+  software: 'software',
   other: 'other',
 } as const;

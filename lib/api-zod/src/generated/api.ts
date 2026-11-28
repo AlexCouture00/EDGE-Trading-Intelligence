@@ -164,9 +164,9 @@ export const GetPropManagerResponse = zod.object({
   "id": zod.string().uuid()
 }))),
   "expenses": zod.array(zod.object({
-  "firmId": zod.string().uuid(),
+  "firmId": zod.string().uuid().nullable(),
   "accountId": zod.string().uuid().nullable(),
-  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'other']),
+  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'software', 'other']),
   "amount": zod.string().regex(getPropManagerResponseExpensesItemOneAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
   "currency": zod.string().regex(getPropManagerResponseExpensesItemOneCurrencyRegExp),
   "date": zod.string().regex(getPropManagerResponseExpensesItemOneDateRegExp),
@@ -328,9 +328,9 @@ export const CreatePropRecordBody = zod.union([zod.object({
   "notes": zod.string().max(createPropRecordBodyFiveNotesMax),
   "confirmed": zod.boolean()
 }),zod.object({
-  "firmId": zod.string().uuid(),
+  "firmId": zod.string().uuid().nullable(),
   "accountId": zod.string().uuid().nullable(),
-  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'other']),
+  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'software', 'other']),
   "amount": zod.string().regex(createPropRecordBodySixAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
   "currency": zod.string().regex(createPropRecordBodySixCurrencyRegExp),
   "date": zod.string().regex(createPropRecordBodySixDateRegExp),
@@ -491,9 +491,9 @@ export const UpdatePropRecordBody = zod.union([zod.object({
   "notes": zod.string().max(updatePropRecordBodyFiveNotesMax),
   "confirmed": zod.boolean()
 }),zod.object({
-  "firmId": zod.string().uuid(),
+  "firmId": zod.string().uuid().nullable(),
   "accountId": zod.string().uuid().nullable(),
-  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'other']),
+  "category": zod.enum(['challenge_purchase', 'challenge_reset', 'activation', 'subscription', 'platform', 'data', 'withdrawal', 'software', 'other']),
   "amount": zod.string().regex(updatePropRecordBodySixAmountRegExp).describe('Exact decimal amount, never a binary floating point monetary input.'),
   "currency": zod.string().regex(updatePropRecordBodySixCurrencyRegExp),
   "date": zod.string().regex(updatePropRecordBodySixDateRegExp),
@@ -520,6 +520,14 @@ export const UpdatePropRecordResponse = zod.object({
 export const DeletePropRecordParams = zod.object({
   "kind": zod.enum(['firms', 'accounts', 'balances', 'challenges', 'rules', 'expenses', 'payouts']),
   "id": zod.coerce.string().uuid()
+})
+
+export const deletePropRecordBodyConfirmationNameMax = 200;
+
+
+
+export const DeletePropRecordBody = zod.object({
+  "confirmationName": zod.string().max(deletePropRecordBodyConfirmationNameMax).optional().describe('Exact account name required to permanently delete a prop account and its linked history.')
 })
 
 export const DeletePropRecordResponse = zod.void()

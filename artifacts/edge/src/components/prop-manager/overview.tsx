@@ -6,6 +6,7 @@ import { Caution, Panel, Stat, StatStrip } from "@/components/kit";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { money } from "@/lib/format";
+import { monthLabel } from "@/lib/month-label";
 import { ACCOUNT_STATUS, ChartEmpty, MARKETS, Sel, axisTick, tipStyle } from "./shared";
 
 const ALL = "__all";
@@ -31,7 +32,7 @@ export function Overview({ p }: { p: Portfolio }) {
 
   const allocation = r.allocationByFirm.filter((x) => Number(x.value) > 0).map((x) => ({ name: x.name, value: Number(x.value) }));
   const split = [{ name: "Funded", value: Number(r.fundedCapital) }, { name: "Evaluation", value: Number(r.challengeCapital) }];
-  const monthly = r.monthly.map((x) => ({ month: x.month, Expenses: Number(x.expenses), Payouts: Number(x.payouts), cumulative: Number(x.cumulative) }));
+  const monthly = r.monthly.map((x) => ({ month: monthLabel(x.month), Expenses: Number(x.expenses), Payouts: Number(x.payouts), cumulative: Number(x.cumulative) }));
   const statuses = r.statusDistribution.map((x) => ({ name: ACCOUNT_STATUS[x.name] ?? x.name, value: x.value }));
   const fmtAxis = (v: number) => money(v, currency, { compact: true });
 

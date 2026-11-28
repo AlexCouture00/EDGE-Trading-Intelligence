@@ -7,18 +7,17 @@ import { asPortfolio, isMigrationNeeded, usePortfolio } from "@/components/prop-
 import { Overview } from "@/components/prop-manager/overview";
 import { Firms } from "@/components/prop-manager/firms";
 import { Accounts } from "@/components/prop-manager/accounts";
-import { Challenges } from "@/components/prop-manager/challenges";
 import { Rules } from "@/components/prop-manager/rules";
 import { Expenses, Payouts } from "@/components/prop-manager/cashflow";
 
-const TABS = [["overview", "Overview"], ["firms", "Firms"], ["accounts", "Accounts & balances"], ["challenges", "Challenges"], ["rules", "Rules"], ["expenses", "Expenses"], ["payouts", "Payouts"]] as const;
+const TABS = [["overview", "Overview"], ["firms", "Firms"], ["accounts", "Accounts & balances"], ["rules", "Rules"], ["expenses", "Expenses"], ["payouts", "Payouts"]] as const;
 
 export default function PropManager() {
   const q = usePortfolio();
   const [tab, setTab] = useState("overview");
   return (
     <div>
-      <PageHeader eyebrow="Record" title="Prop Firm Manager" sub="Firms, accounts, balance snapshots, challenges, rules, expenses and payouts. Allocations are notional, never personal assets."
+      <PageHeader eyebrow="Record" title="Prop Firm Manager" sub="Firms, accounts, balance snapshots, rules, trading expenses and payouts. Allocations are notional, never personal assets."
         actions={<Button size="sm" variant="outline" onClick={() => void q.refetch()} disabled={q.isFetching} data-testid="button-refresh-prop"><RotateCw className="h-3.5 w-3.5 mr-1.5" />Refresh</Button>} />
       {q.data && q.isError && <Caution>Portfolio refresh failed. The last loaded data and any open form have been kept. Retry Refresh before relying on these totals.</Caution>}
       {q.isLoading ? <LoadingBlock rows={6} /> : q.isError && !q.data ? (
@@ -40,7 +39,6 @@ export default function PropManager() {
           <TabsContent value="overview"><Overview p={asPortfolio(q.data)} /></TabsContent>
           <TabsContent value="firms"><Firms p={asPortfolio(q.data)} /></TabsContent>
           <TabsContent value="accounts"><Accounts p={asPortfolio(q.data)} /></TabsContent>
-          <TabsContent value="challenges"><Challenges p={asPortfolio(q.data)} /></TabsContent>
           <TabsContent value="rules"><Rules p={asPortfolio(q.data)} /></TabsContent>
           <TabsContent value="expenses"><Expenses p={asPortfolio(q.data)} /></TabsContent>
           <TabsContent value="payouts"><Payouts p={asPortfolio(q.data)} /></TabsContent>
