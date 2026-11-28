@@ -81,7 +81,7 @@ export default function Journal() {
             <table className="w-full text-[12.5px]">
               <thead>
                 <tr className="text-left text-muted-foreground border-b border-card-border">
-                  {["Date", "Symbol", "Side", "Strategy", "MFE", "Session", "Market regime", "Volatility", "R"].map((h, i) => (
+                  {["Date", "Symbol", "Side", "Strategy", "Confluences", "MFE", "Session", "Market regime", "Volatility", "R"].map((h, i) => (
                     <th key={h} className={`font-normal px-3 py-2.5 whitespace-nowrap ${i === 0 ? "pl-4" : ""} ${h === "MFE" || h === "R" ? "text-right" : ""} ${h === "R" ? "pr-4" : ""}`}>{h}</th>
                   ))}
                 </tr>
@@ -93,6 +93,18 @@ export default function Journal() {
                     <td className="px-3 py-2.5 font-medium">{t.symbol || <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-3 py-2.5"><DirPill d={t.direction} /></td>
                     <td className="px-3 py-2.5 text-muted-foreground truncate max-w-[160px]">{t.strategyName ?? "—"}</td>
+                    <td className="px-3 py-2.5 min-w-[180px] max-w-[300px]" data-testid={`cell-confluences-${t.id}`}>
+                      {t.confluences.length ? (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          {t.confluences.map((c) => (
+                            <span key={c.id} className="inline-flex items-center gap-1.5">
+                              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: c.color ?? "#888" }} />
+                              {c.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
                     <td className="px-3 py-2.5 num text-right whitespace-nowrap" data-testid={`cell-mfe-${t.id}`}>{rFmt(t.mfeR)}</td>
                     <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap" data-testid={`cell-session-${t.id}`}>{t.session?.trim() || "—"}</td>
                     <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap" data-testid={`cell-regime-${t.id}`}>{t.regime?.trim() || "—"}</td>

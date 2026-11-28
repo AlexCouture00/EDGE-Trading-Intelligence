@@ -69,11 +69,11 @@ export default function Confluences() {
                   <div className="panel grid grid-cols-[repeat(auto-fit,minmax(min(100%,190px),1fr))] divide-x divide-y divide-card-border bg-background/40">
                     <Stat label="Matching trades" value={<span className="flex items-center gap-2">{cm.totalTrades}<SampleBadge n={cm.totalTrades} min={minSample} /></span>} />
                     <Stat label="Win rate" value={ratio(cm.winRate)} />
-                    <Stat label="Avg R" value={rFmt(cm.averageR)} valueClass={tone(cm.averageR)} sub={`n=${cm.rSample}`} />
+                    <Stat label="Avg winning R" value={rFmt(cm.averageWinningR ?? null)} valueClass={tone(cm.averageWinningR ?? null)} sub={`n=${cm.wins} winning trades`} />
                     <Stat label="Total R" value={rFmt(cm.totalR)} valueClass={tone(cm.totalR)} />
                     <Stat label="Profit factor" value={pf(cm)} />
                   </div>
-                  {a && <p className="text-[12px] text-muted-foreground mt-3">Baseline for comparison: all {a.metrics.totalTrades} closed trades in scope averaged <span className={tone(a.metrics.averageR)}>{rFmt(a.metrics.averageR)}</span> at {ratio(a.metrics.winRate)} win rate.</p>}
+                  {a && <p className="text-[12px] text-muted-foreground mt-3">Baseline for comparison: winning trades among all {a.metrics.totalTrades} closed trades in scope averaged <span className={tone(a.metrics.averageWinningR ?? null)}>{rFmt(a.metrics.averageWinningR ?? null)}</span> at {ratio(a.metrics.winRate)} win rate. Average winning R excludes losses, break-even trades and missing R.</p>}
                   {cm.totalTrades < Math.max(20, minSample) && <div className="mt-3"><Caution>{cm.totalTrades === 0 ? "No closed trades match this selection." : `Only ${cm.totalTrades} matching trades. This observed difference from baseline could easily be noise; it does not establish an edge.`}</Caution></div>}
                 </>
               )}
@@ -85,17 +85,17 @@ export default function Confluences() {
           <>
             {a.warnings.map((w, i) => <Caution key={i}>{w}</Caution>)}
             <Panel title="Individual confluences" meta={`Non-archived only · closed trades that included it · samples under ${minSample} flagged`}>
-              <GroupTable rows={a.confluences} currency={cur} label="Confluence" showColor minSample={minSample}
+              <GroupTable rows={a.confluences} currency={cur} label="Confluence" showColor minSample={minSample} winningAverage
                 onRowClick={(g) => setSel([g.id])}
                 empty={<div className="text-sm text-muted-foreground py-8 text-center">No tagged closed trades in scope yet.</div>} />
             </Panel>
             <div className="grid gap-4 xl:grid-cols-2">
               <Panel title="By confluence count" meta="Does stacking more conditions coincide with better results?">
                 {a.byConfluenceCount.length > 0 && <GroupBars rows={a.byConfluenceCount} metric="totalR" currency={cur} height={180} />}
-                <div className="mt-3"><GroupTable rows={a.byConfluenceCount} currency={cur} label="Count" minSample={minSample} /></div>
+                <div className="mt-3"><GroupTable rows={a.byConfluenceCount} currency={cur} label="Count" minSample={minSample} winningAverage /></div>
               </Panel>
               <Panel title="Observed combinations" meta="Exact sets seen in your trades" bodyClass="p-4 max-h-[520px] overflow-y-auto">
-                <GroupTable rows={a.combinations} currency={cur} label="Combination" minSample={minSample}
+                <GroupTable rows={a.combinations} currency={cur} label="Combination" minSample={minSample} winningAverage
                   onRowClick={(g) => { if (g.confluenceIds?.length) { setSel(g.confluenceIds); setMode("exact"); window.scrollTo({ top: 0, behavior: "smooth" }); } }} />
               </Panel>
             </div>
